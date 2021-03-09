@@ -25,4 +25,5 @@ protected:
 
 private:
 	void GenerateMesh();
+	FVector InterpolateVertex();
 };
