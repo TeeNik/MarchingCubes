@@ -25,5 +25,5 @@ protected:
 
 private:
 	void GenerateMesh();
-	FVector InterpolateVertex();
+	FVector InterpolateVertex(FVector4 a, FVector4 b);
 };

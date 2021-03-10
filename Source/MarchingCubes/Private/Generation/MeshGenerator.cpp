@@ -30,15 +30,24 @@ void AMeshGenerator::GenerateMesh()
 		FVector vertexA;
 		FVector vertexB;
 		FVector vertexC;
+
+		FVector operator [] (int i) const
+		{
+			switch (i) {
+				case 0:
+					return vertexA;
+				case 1:
+					return vertexB;
+				default:
+					return vertexC;
+			}
+		};
 	};
 
-
-	const int numOfPoints = 2;
+	const int numOfPoints = 10;
 	const float cubeSize = 100.0f;
 
 	TArray<Triangle> triangles;
-	TArray<FVector> vertices;
-	TArray<int> indices;
 
 	for (int x = 0; x < numOfPoints; ++x)
 	{
@@ -46,10 +55,8 @@ void AMeshGenerator::GenerateMesh()
 		{
 			for (int z = 0; z < numOfPoints; ++z)
 			{
-				DrawDebugSphere(GetWorld(), FVector(x*cubeSize, y*cubeSize, z*cubeSize), 2, 12, FColor::Green, false, 25);
-
 				if (x >= numOfPoints - 1 || y >= numOfPoints - 1 || z >= numOfPoints - 1) {
-					return;
+					break;
 				}
 
 				FVector4 cubeCorners[8] = {
@@ -62,6 +69,26 @@ void AMeshGenerator::GenerateMesh()
 					FVector(x + 1, y + 1, z + 1),
 					FVector(x, y + 1, z + 1)
 				};
+
+				for(FVector4& point : cubeCorners)
+				{
+					float dist = FVector::DistSquared(point * cubeSize, FVector(400, 400, 400));
+					if(dist < 125 * 125 * 3)
+					{
+						point.W = 0;
+					}
+					FColor color = point.W ? FColor::Green : FColor::Red;
+					//if(point.X == point.Y)
+					//{
+					//	point.W = 0;
+					//} 
+					//else
+					//{
+					//	color = FColor::Red;
+					//	point.W = 1;
+					//}
+					//DrawDebugSphere(GetWorld(), point * cubeSize, 2, 12, color, false, 25);
+				}
 
 				float isoLevel = 1;
 				int cubeIndex = 0;
@@ -86,9 +113,52 @@ void AMeshGenerator::GenerateMesh()
 					int b2 = GenerationUtils::Edges[GenerationUtils::TriTable[cubeIndex][i+2]][1];
 				
 					Triangle tri;
+					tri.vertexC = InterpolateVertex(cubeCorners[a0], cubeCorners[b0]) * cubeSize;
+					tri.vertexB = InterpolateVertex(cubeCorners[a1], cubeCorners[b1]) * cubeSize;
+					tri.vertexA = InterpolateVertex(cubeCorners[a2], cubeCorners[b2]) * cubeSize;
+					triangles.Emplace(tri);
 				}
-
 			}
 		}
 	}
+
+	TArray<FVector> vertices;
+	vertices.Init(FVector::ZeroVector, triangles.Num() * 3);
+	TArray<int> indices;
+	indices.Init(-1, triangles.Num() * 3);
+
+	for(int i = 0; i < triangles.Num(); ++i)
+	{
+		for(int j = 0; j < 3; ++j)
+		{
+			indices[i * 3 + j] = i * 3 + j;
+			vertices[i * 3 + j] = triangles[i][j];
+		}
+	}
+
+	TArray<FVector> normals;
+	normals.Init(FVector::ZeroVector, vertices.Num());
+	for (int i = 0; i < indices.Num(); i += 3)
+	{
+		FVector v1 = vertices[indices[i + 1]] - vertices[indices[i]];
+		FVector v2 = vertices[indices[i + 2]] - vertices[indices[i]];
+		FVector faceNormal = FVector::CrossProduct(v2, v1);
+		faceNormal.Normalize();
+
+		normals[indices[i]] += faceNormal;
+		normals[indices[i + 1]] += faceNormal;
+		normals[indices[i + 2]] += faceNormal;
+	}
+
+	for (int i = 0; i < normals.Num(); ++i)
+	{
+		normals[i].Normalize();
+	}
+
+	Mesh->CreateMeshSection_LinearColor(0, vertices, indices, normals, TArray<FVector2D>(), TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
+}
+
+FVector AMeshGenerator::InterpolateVertex(FVector4 a, FVector4 b)
+{
+	return a + (b - a) / 2;
 }
