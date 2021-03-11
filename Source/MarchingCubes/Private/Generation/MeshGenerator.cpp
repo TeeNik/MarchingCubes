@@ -44,18 +44,15 @@ void AMeshGenerator::GenerateMesh()
 		};
 	};
 
-	const int numOfPoints = 10;
-	const float cubeSize = 100.0f;
-
 	TArray<Triangle> triangles;
 
-	for (int x = 0; x < numOfPoints; ++x)
+	for (int x = 0; x < NumOfPoints; ++x)
 	{
-		for (int y = 0; y < numOfPoints; ++y)
+		for (int y = 0; y < NumOfPoints; ++y)
 		{
-			for (int z = 0; z < numOfPoints; ++z)
+			for (int z = 0; z < NumOfPoints; ++z)
 			{
-				if (x >= numOfPoints - 1 || y >= numOfPoints - 1 || z >= numOfPoints - 1) {
+				if (x >= NumOfPoints - 1 || y >= NumOfPoints - 1 || z >= NumOfPoints - 1) {
 					break;
 				}
 
@@ -72,22 +69,17 @@ void AMeshGenerator::GenerateMesh()
 
 				for(FVector4& point : cubeCorners)
 				{
-					float dist = FVector::DistSquared(point * cubeSize, FVector(400, 400, 400));
-					if(dist < 125 * 125 * 3)
+					FVector scaledPoint = point * CubeSize;
+					float dist = FVector::DistSquared(scaledPoint, SphereCenter);
+					if(dist < SphereRadius * SphereRadius * 3)
 					{
 						point.W = 0;
 					}
-					FColor color = point.W ? FColor::Green : FColor::Red;
-					//if(point.X == point.Y)
-					//{
-					//	point.W = 0;
-					//} 
-					//else
-					//{
-					//	color = FColor::Red;
-					//	point.W = 1;
-					//}
-					//DrawDebugSphere(GetWorld(), point * cubeSize, 2, 12, color, false, 25);
+					if(DrawDebugPoints)
+					{
+						FColor color = point.W ? FColor::Green : FColor::Red;
+						DrawDebugSphere(GetWorld(), scaledPoint, 2, 4, color, false, 25);
+					}
 				}
 
 				float isoLevel = 1;
@@ -113,9 +105,9 @@ void AMeshGenerator::GenerateMesh()
 					int b2 = GenerationUtils::Edges[GenerationUtils::TriTable[cubeIndex][i+2]][1];
 				
 					Triangle tri;
-					tri.vertexC = InterpolateVertex(cubeCorners[a0], cubeCorners[b0]) * cubeSize;
-					tri.vertexB = InterpolateVertex(cubeCorners[a1], cubeCorners[b1]) * cubeSize;
-					tri.vertexA = InterpolateVertex(cubeCorners[a2], cubeCorners[b2]) * cubeSize;
+					tri.vertexC = InterpolateVertex(cubeCorners[a0], cubeCorners[b0]) * CubeSize;
+					tri.vertexB = InterpolateVertex(cubeCorners[a1], cubeCorners[b1]) * CubeSize;
+					tri.vertexA = InterpolateVertex(cubeCorners[a2], cubeCorners[b2]) * CubeSize;
 					triangles.Emplace(tri);
 				}
 			}

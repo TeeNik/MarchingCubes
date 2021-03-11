@@ -23,6 +23,18 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USceneComponent* Root;
 
+	UPROPERTY(EditAnywhere)
+	int NumOfPoints = 10;
+	UPROPERTY(EditAnywhere)
+	float CubeSize = 100.0f;
+
+	UPROPERTY(EditAnywhere)
+	bool DrawDebugPoints = false;
+	UPROPERTY(EditAnywhere)
+	float SphereRadius = 150.0f;
+	UPROPERTY(EditAnywhere)
+	FVector SphereCenter;
+
 private:
 	void GenerateMesh();
 	FVector InterpolateVertex(FVector4 a, FVector4 b);
