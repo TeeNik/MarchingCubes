@@ -16,10 +16,45 @@ AMeshGenerator::AMeshGenerator()
 
 }
 
+void AMeshGenerator::AddPoint(FVector hitPoint)
+{
+	for (FVector4& point : Points)
+	{
+		//UE_LOG(LogTemp, Log, TEXT("%f"), FVector::Dist(point, hitPoint));
+		if(FVector::Dist(point * CubeSize, hitPoint) < CubeSize * 3)
+		{
+			point.W = 0;
+		}
+	}
+	GenerateMesh();
+}
+
 void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
+	for (int x = 0; x < NumOfPoints; ++x)
+	{
+		for (int y = 0; y < NumOfPoints; ++y)
+		{
+			for (int z = 0; z < NumOfPoints; ++z)
+			{
+				FVector4 point(x, y, z, 1);
+				FVector scaledPoint = point * CubeSize;
+				float dist = FVector::DistSquared(scaledPoint, SphereCenter);
+				if (dist < SphereRadius * SphereRadius * 3)
+				{
+					point.W = 0;
+				}
+				if (DrawDebugPoints)
+				{
+					FColor color = point.W ? FColor::Green : FColor::Red;
+					DrawDebugSphere(GetWorld(), scaledPoint, 2, 4, color, false, 25);
+				}
+				Points.Emplace(point);
+			}
+		}
+	}
 	GenerateMesh();
 }
 
@@ -57,30 +92,15 @@ void AMeshGenerator::GenerateMesh()
 				}
 
 				FVector4 cubeCorners[8] = {
-					FVector(x, y, z),
-					FVector(x + 1, y, z),
-					FVector(x + 1, y, z + 1),
-					FVector(x, y, z + 1),
-					FVector(x, y + 1, z),
-					FVector(x + 1, y + 1, z),
-					FVector(x + 1, y + 1, z + 1),
-					FVector(x, y + 1, z + 1)
+					Points[IndexFromCoord(x, y, z)],
+					Points[IndexFromCoord(x + 1, y, z)],
+					Points[IndexFromCoord(x + 1, y, z + 1)],
+					Points[IndexFromCoord(x, y, z + 1)],
+					Points[IndexFromCoord(x, y + 1, z)],
+					Points[IndexFromCoord(x + 1, y + 1, z)],
+					Points[IndexFromCoord(x + 1, y + 1, z + 1)],
+					Points[IndexFromCoord(x, y + 1, z + 1)]
 				};
-
-				for(FVector4& point : cubeCorners)
-				{
-					FVector scaledPoint = point * CubeSize;
-					float dist = FVector::DistSquared(scaledPoint, SphereCenter);
-					if(dist < SphereRadius * SphereRadius * 3)
-					{
-						point.W = 0;
-					}
-					if(DrawDebugPoints)
-					{
-						FColor color = point.W ? FColor::Green : FColor::Red;
-						DrawDebugSphere(GetWorld(), scaledPoint, 2, 4, color, false, 25);
-					}
-				}
 
 				float isoLevel = 1;
 				int cubeIndex = 0;
@@ -105,9 +125,9 @@ void AMeshGenerator::GenerateMesh()
 					int b2 = GenerationUtils::Edges[GenerationUtils::TriTable[cubeIndex][i+2]][1];
 				
 					Triangle tri;
-					tri.vertexC = InterpolateVertex(cubeCorners[a0], cubeCorners[b0]) * CubeSize;
+					tri.vertexA = InterpolateVertex(cubeCorners[a0], cubeCorners[b0]) * CubeSize;
 					tri.vertexB = InterpolateVertex(cubeCorners[a1], cubeCorners[b1]) * CubeSize;
-					tri.vertexA = InterpolateVertex(cubeCorners[a2], cubeCorners[b2]) * CubeSize;
+					tri.vertexC = InterpolateVertex(cubeCorners[a2], cubeCorners[b2]) * CubeSize;
 					triangles.Emplace(tri);
 				}
 			}
@@ -153,4 +173,9 @@ void AMeshGenerator::GenerateMesh()
 FVector AMeshGenerator::InterpolateVertex(FVector4 a, FVector4 b)
 {
 	return a + (b - a) / 2;
+}
+
+int AMeshGenerator::IndexFromCoord(int x, int y, int z)
+{
+	return x + y * NumOfPoints + z * NumOfPoints * NumOfPoints;
 }

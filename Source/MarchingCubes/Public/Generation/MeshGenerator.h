@@ -15,6 +15,8 @@ class MARCHINGCUBES_API AMeshGenerator : public AActor
 public:	
 	AMeshGenerator();
 
+	void AddPoint(FVector hitPoint);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -38,4 +40,6 @@ protected:
 private:
 	void GenerateMesh();
 	FVector InterpolateVertex(FVector4 a, FVector4 b);
+	int IndexFromCoord(int x, int y, int z);
+	TArray<FVector4> Points;
 };
