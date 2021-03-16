@@ -18,23 +18,20 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if(IsLMBPressed)
+	if((IsLMBPressed || IsRMBPressed) && GetWorld()->GetTimeSeconds() > NextFireTime)
 	{
-		if(GetWorld()->GetTimeSeconds() > NextFireTime)
-		{
-			NextFireTime = GetWorld()->GetTimeSeconds() + 0.1f;
+		NextFireTime = GetWorld()->GetTimeSeconds() + FireTimeout;
 
-			FHitResult hit;
-			FVector start = GetActorLocation();
-			FVector end = start + GetActorForwardVector() * 10000;
-			bool result = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECollisionChannel::ECC_Visibility);
-			if (result)
+		FHitResult hit;
+		FVector start = GetActorLocation();
+		FVector end = start + GetActorForwardVector() * 10000;
+		bool result = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECollisionChannel::ECC_Visibility);
+		if (result)
+		{
+			AMeshGenerator* generator = Cast<AMeshGenerator>(hit.Actor);
+			if (generator)
 			{
-				AMeshGenerator* generator = Cast<AMeshGenerator>(hit.Actor);
-				if (generator)
-				{
-					generator->AddPoint(hit.ImpactPoint);
-				}
+				generator->AddPoint(hit.ImpactPoint, IsLMBPressed);
 			}
 		}
 	}
@@ -50,8 +47,12 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	PlayerInputComponent->BindAxis("Turn", this, &APlayerCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &APlayerCharacter::LookUp);
+
 	PlayerInputComponent->BindAction("LMB", IE_Pressed, this, &APlayerCharacter::OnLMBPressed);
 	PlayerInputComponent->BindAction("LMB", IE_Released, this, &APlayerCharacter::OnLMBReleased);
+
+	PlayerInputComponent->BindAction("RMB", IE_Pressed, this, &APlayerCharacter::OnRMBPressed);
+	PlayerInputComponent->BindAction("RMB", IE_Released, this, &APlayerCharacter::OnRMBReleased);
 }
 
 void APlayerCharacter::MoveForward(float Value)
@@ -96,4 +97,14 @@ void APlayerCharacter::OnLMBPressed()
 void APlayerCharacter::OnLMBReleased()
 {
 	IsLMBPressed = false;
+}
+
+void APlayerCharacter::OnRMBPressed()
+{
+	IsRMBPressed = true;
+}
+
+void APlayerCharacter::OnRMBReleased()
+{
+	IsRMBPressed = false;
 }

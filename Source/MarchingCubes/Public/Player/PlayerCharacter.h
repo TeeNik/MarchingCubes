@@ -17,6 +17,9 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UPROPERTY(EditAnywhere)
+	float FireTimeout = 0.2f;
+
 private:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -26,6 +29,11 @@ private:
 	void OnLMBPressed();
 	void OnLMBReleased();
 	bool IsLMBPressed = false;
+
+	void OnRMBPressed();
+	void OnRMBReleased();
+	bool IsRMBPressed = false;
+
 	float NextFireTime = 0.0f;
 
 };
