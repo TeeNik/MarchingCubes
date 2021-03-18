@@ -12,14 +12,19 @@ class MARCHINGCUBES_API ACaveActor : public AActor
 public:	
 	ACaveActor();
 
+	UFUNCTION(BlueprintCallable)
+	void Draw() const;
+
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector StartPoint;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector EndPoint;
-	UPROPERTY(EditAnywhere)
-	float Radius;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TunnelRadius;
+
+
 
 };

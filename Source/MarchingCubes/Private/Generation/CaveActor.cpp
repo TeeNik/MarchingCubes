@@ -1,27 +1,17 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Generation/CaveActor.h"
+#include "Generation/GenerationUtils.h"
 
-// Sets default values
 ACaveActor::ACaveActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
 }
 
-// Called when the game starts or when spawned
 void ACaveActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
-// Called every frame
-void ACaveActor::Tick(float DeltaTime)
+void ACaveActor::Draw() const
 {
-	Super::Tick(DeltaTime);
-
+	FQuat rot = (EndPoint - StartPoint).ToOrientationQuat();
+	GenerationUtils::DrawDebugTunnel(GetWorld(), (StartPoint + EndPoint) / 2, FVector::Dist(StartPoint, EndPoint) / 2, TunnelRadius, rot, FColor::Green, false, 20, -1, 2);
 }
-
