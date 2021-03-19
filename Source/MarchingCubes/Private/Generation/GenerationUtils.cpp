@@ -1,4 +1,5 @@
 #include "Generation/GenerationUtils.h"
+#include "DrawDebugHelpers.h"
 
 int GenerationUtils::Edges[12][2] =
 {
@@ -310,3 +311,90 @@ int GenerationUtils::TriTable[256][16] =
 {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1} 
 };
+
+
+void GenerationUtils::DrawHalfCircle(const UWorld* InWorld, const FVector& Base, const FVector& X, const FVector& Y, const FColor& Color, float Radius, int32 NumSides, bool bPersistentLines, float LifeTime, uint8 DepthPriority, float Thickness)
+{
+	float	AngleDelta = 2.0f * (float)PI / ((float)NumSides);
+	FVector	LastVertex = Base + X * Radius;
+
+	for (int32 SideIndex = 0; SideIndex < (NumSides / 2); SideIndex++)
+	{
+		FVector	Vertex = Base + (X * FMath::Cos(AngleDelta * (SideIndex + 1)) + Y * FMath::Sin(AngleDelta * (SideIndex + 1))) * Radius;
+		DrawDebugLine(InWorld, LastVertex, Vertex, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
+		LastVertex = Vertex;
+	}
+}
+
+void GenerationUtils::DrawDebugTunnel(const UWorld* InWorld, FVector const& Center, float HalfHeight, float Radius, const FQuat& Rotation, FColor const& Color, bool bPersistentLines, float LifeTime, uint8 DepthPriority, float Thickness)
+{
+	const int32 DrawCollisionSides = 16;
+
+	FVector Origin = Center;
+	FMatrix Axes = FQuatRotationTranslationMatrix(Rotation, FVector::ZeroVector);
+	FVector XAxis = Axes.GetScaledAxis(EAxis::X);
+	FVector YAxis = Axes.GetScaledAxis(EAxis::Y);
+	FVector ZAxis = Axes.GetScaledAxis(EAxis::Z);
+
+	// Draw top and bottom circles
+	//float HalfAxis = FMath::Max<float>(HalfHeight - Radius, 1.f);
+	float HalfAxis = HalfHeight;
+
+	FVector TopEnd = Origin + HalfAxis * XAxis;
+	FVector BottomEnd = Origin - HalfAxis * XAxis;
+
+	DrawCircle(InWorld, TopEnd, XAxis, YAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
+	DrawCircle(InWorld, BottomEnd, XAxis, YAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
+
+	// Draw domed caps
+	DrawHalfCircle(InWorld, TopEnd, XAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
+	DrawHalfCircle(InWorld, TopEnd, YAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
+
+	FVector NegZAxis = -ZAxis;
+
+	DrawHalfCircle(InWorld, BottomEnd, XAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
+	DrawHalfCircle(InWorld, BottomEnd, YAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
+
+	// Draw connected lines
+	DrawDebugLine(InWorld, TopEnd + Radius * YAxis, BottomEnd + Radius * YAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
+	DrawDebugLine(InWorld, TopEnd - Radius * YAxis, BottomEnd - Radius * YAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
+	DrawDebugLine(InWorld, TopEnd + Radius * ZAxis, BottomEnd + Radius * ZAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
+}
+
+bool GenerationUtils::IsInsideCylider(const FVector& start, const FVector& end, const FVector& point, float radius, bool onlyHalf)
+{
+	//UE_LOG(LogTemp, Log, TEXT("%f %f"), point.X, point.Y, point.Z);
+	FVector d = end - start;
+	FVector pd = point - start;
+	float lengthsq = FVector::DistSquared(start, end);
+
+	float dot = FVector::DotProduct(pd, d);
+	if (dot < 0.0f || dot > lengthsq)
+	{
+		return false;
+	}
+
+	if (onlyHalf)
+	{
+		FVector dir = d.GetSafeNormal();
+		FVector p = start + dir * FMath::Sqrt(dot * dot / lengthsq);
+		//UE_LOG(LogTemp, Log, TEXT("%f %f %f"), p.X, p.Y, p.Z);
+		if (point.Z < p.Z)
+		{
+			return false;
+		}
+	}
+
+	float dsq = pd.SizeSquared() - dot * dot / lengthsq;
+	return dsq <= radius * radius;
+}
+
+bool GenerationUtils::IsInsideSphere(const FVector& center, const FVector& point, float radius)
+{
+	return FVector::DistSquared(center, point) <= radius * radius;
+}
+
+bool GenerationUtils::IsInsideCapsule(const FVector& start, const FVector& end, const FVector& point, float radius, bool onlyHalf /*= false*/)
+{
+	return IsInsideSphere(start, point, radius) || IsInsideSphere(end, point, radius) || IsInsideCylider(start, end, point, radius, onlyHalf);
+}
