@@ -51,8 +51,6 @@ private:
 	int IndexFromCoord(int x, int y, int z);
 	TArray<FVector4> Points;
 
-	bool IsInsideCylider(const FVector& start, const FVector& end, const FVector& point, float radius, bool onlyHalf);
-	bool IsInsideSphere(const FVector& center, const FVector& point, float radius);
-	bool IsInsideCapsule(const FVector& start, const FVector& end, const FVector& point, float radius, bool onlyHalf = false);
+
 
 };

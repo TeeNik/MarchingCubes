@@ -4,144 +4,6 @@
 #include <DrawDebugHelpers.h>
 #include "Generation/GenerationUtils.h"
 
-
-void DrawHalfCircleCustom(const UWorld* InWorld, const FVector& Base, const FVector& X, const FVector& Y, const FColor& Color, float Radius, int32 NumSides, bool bPersistentLines, float LifeTime, uint8 DepthPriority, float Thickness)
-{
-	float	AngleDelta = 2.0f * (float)PI / ((float)NumSides);
-	FVector	LastVertex = Base + X * Radius;
-
-	for (int32 SideIndex = 0; SideIndex < (NumSides / 2); SideIndex++)
-	{
-		FVector	Vertex = Base + (X * FMath::Cos(AngleDelta * (SideIndex + 1)) + Y * FMath::Sin(AngleDelta * (SideIndex + 1))) * Radius;
-		DrawDebugLine(InWorld, LastVertex, Vertex, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		LastVertex = Vertex;
-	}
-}
-
-void DrawDebugCapsuleCustom(const UWorld* InWorld, FVector const& Center, float HalfHeight, float Radius, const FQuat& Rotation, FColor const& Color, bool bPersistentLines, float LifeTime, uint8 DepthPriority, float Thickness)
-{
-	// no debug line drawing on dedicated server
-	if (GEngine->GetNetMode(InWorld) != NM_DedicatedServer)
-	{
-		const int32 DrawCollisionSides = 16;
-
-		FVector Origin = Center;
-		FMatrix Axes = FQuatRotationTranslationMatrix(Rotation, FVector::ZeroVector);
-		FVector XAxis = Axes.GetScaledAxis(EAxis::X);
-		FVector YAxis = Axes.GetScaledAxis(EAxis::Y);
-		FVector ZAxis = Axes.GetScaledAxis(EAxis::Z);
-
-		// Draw top and bottom circles
-		float HalfAxis = FMath::Max<float>(HalfHeight - Radius, 1.f);
-		FVector TopEnd = Origin + HalfAxis * ZAxis;
-		FVector BottomEnd = Origin - HalfAxis * ZAxis;
-
-		DrawCircle(InWorld, TopEnd, XAxis, YAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawCircle(InWorld, BottomEnd, XAxis, YAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-
-		// Draw domed caps
-		DrawHalfCircleCustom(InWorld, TopEnd, YAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawHalfCircleCustom(InWorld, TopEnd, XAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-
-		FVector NegZAxis = -ZAxis;
-
-		DrawHalfCircleCustom(InWorld, BottomEnd, YAxis, NegZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawHalfCircleCustom(InWorld, BottomEnd, XAxis, NegZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-
-		// Draw connected lines
-		DrawDebugLine(InWorld, TopEnd + Radius * XAxis, BottomEnd + Radius * XAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawDebugLine(InWorld, TopEnd - Radius * XAxis, BottomEnd - Radius * XAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawDebugLine(InWorld, TopEnd + Radius * YAxis, BottomEnd + Radius * YAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawDebugLine(InWorld, TopEnd - Radius * YAxis, BottomEnd - Radius * YAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
-	}
-	else
-	{
-		//UE_DRAW_SERVER_DEBUG_ON_EACH_CLIENT(DrawDebugCapsule, Center, HalfHeight, Radius, Rotation, AdjustColorForServer(Color), bPersistentLines, LifeTime, DepthPriority, Thickness);
-	}
-}
-
-void DrawDebugTunnelCustom(const UWorld* InWorld, FVector const& Center, float HalfHeight, float Radius, const FQuat& Rotation, FColor const& Color, bool bPersistentLines, float LifeTime, uint8 DepthPriority, float Thickness)
-{
-	// no debug line drawing on dedicated server
-	if (GEngine->GetNetMode(InWorld) != NM_DedicatedServer)
-	{
-		const int32 DrawCollisionSides = 16;
-
-		FVector Origin = Center;
-		FMatrix Axes = FQuatRotationTranslationMatrix(Rotation, FVector::ZeroVector);
-		FVector XAxis = Axes.GetScaledAxis(EAxis::X);
-		FVector YAxis = Axes.GetScaledAxis(EAxis::Y);
-		FVector ZAxis = Axes.GetScaledAxis(EAxis::Z);
-
-		// Draw top and bottom circles
-		//float HalfAxis = FMath::Max<float>(HalfHeight - Radius, 1.f);
-		float HalfAxis = HalfHeight;
-
-		FVector TopEnd = Origin + HalfAxis * XAxis;
-		FVector BottomEnd = Origin - HalfAxis * XAxis;
-
-		DrawCircle(InWorld, TopEnd, XAxis, YAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawCircle(InWorld, BottomEnd, XAxis, YAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-
-		// Draw domed caps
-		DrawHalfCircleCustom(InWorld, TopEnd, XAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawHalfCircleCustom(InWorld, TopEnd, YAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-
-		FVector NegZAxis = -ZAxis;
-
-		DrawHalfCircleCustom(InWorld, BottomEnd, XAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawHalfCircleCustom(InWorld, BottomEnd, YAxis, ZAxis, Color, Radius, DrawCollisionSides, bPersistentLines, LifeTime, DepthPriority, Thickness);
-
-		// Draw connected lines
-		DrawDebugLine(InWorld, TopEnd + Radius * YAxis, BottomEnd + Radius * YAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawDebugLine(InWorld, TopEnd - Radius * YAxis, BottomEnd - Radius * YAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		DrawDebugLine(InWorld, TopEnd + Radius * ZAxis, BottomEnd + Radius * ZAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
-		//DrawDebugLine(InWorld, TopEnd - Radius * YAxis, BottomEnd - Radius * YAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
-	}
-	else
-	{
-		//UE_DRAW_SERVER_DEBUG_ON_EACH_CLIENT(DrawDebugCapsule, Center, HalfHeight, Radius, Rotation, AdjustColorForServer(Color), bPersistentLines, LifeTime, DepthPriority, Thickness);
-	}
-}
-
-bool AMeshGenerator::IsInsideCylider(const FVector& start, const FVector& end, const FVector& point, float radius, bool onlyHalf)
-{
-	//UE_LOG(LogTemp, Log, TEXT("%f %f"), point.X, point.Y, point.Z);
-	FVector d = end - start;
-	FVector pd = point - start;
-	float lengthsq = FVector::DistSquared(start, end);
-
-	float dot = FVector::DotProduct(pd, d);
-	if( dot < 0.0f || dot > lengthsq)
-	{
-		return false;
-	}
-
-	if(onlyHalf)
-	{
-		FVector dir = d.GetSafeNormal();
-		FVector p = start + dir * FMath::Sqrt(dot * dot / lengthsq);
-		//UE_LOG(LogTemp, Log, TEXT("%f %f %f"), p.X, p.Y, p.Z);
-		if(point.Z < p.Z)
-		{
-			return false;
-		}
-	}
-	
-	float dsq = pd.SizeSquared() - dot * dot / lengthsq;
-	return dsq <= radius*radius;
-}
-
-bool AMeshGenerator::IsInsideSphere(const FVector& center, const FVector& point, float radius)
-{
-	return FVector::DistSquared(center, point) <= radius * radius;
-}
-
-bool AMeshGenerator::IsInsideCapsule(const FVector& start, const FVector& end, const FVector& point, float radius, bool onlyHalf /*= false*/)
-{
-	return IsInsideSphere(start, point, radius) || IsInsideSphere(end, point, radius) || IsInsideCylider(start, end, point, radius, onlyHalf);
-}
-
 AMeshGenerator::AMeshGenerator()
 {
 
@@ -170,21 +32,9 @@ void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
+	const float radius = 100;
 	FVector start(200, 200, 200);
 	FVector end(600, 200, 400);
-
-	//FQuat rot = FQuat::MakeFromEuler(FVector(-90, 0, 0));
-	FQuat rot = (end - start).ToOrientationQuat();
-
-	bool t = IsInsideCylider(start, end, FVector(400, 200, 300), 100, true);
-	if(t)
-	{
-		end.X = 700;
-	}
-
-	const float radius = 100;
-	DrawDebugTunnelCustom(GetWorld(), (start+end)/2, FVector::Dist(start, end)/2, radius, rot, FColor::Green, false, 20, -1, 2);
-	DrawDebugLine(GetWorld(), start, end, FColor::Red, false, 60, -1, 2);
 
 	for (int x = 0; x < NumOfPoints; ++x)
 	{
@@ -196,7 +46,7 @@ void AMeshGenerator::BeginPlay()
 				FVector scaledPoint = point * CubeSize;
 
 				//if(UKismetMathLibrary::IsPointInBox(scaledPoint, BoxOrigin, BoxExtent))
-				if (IsInsideCapsule(start, end, scaledPoint, radius, true))
+				if (GenerationUtils::IsInsideCapsule(start, end, scaledPoint, radius, true))
 				{
 					point.W = 0;
 				}
