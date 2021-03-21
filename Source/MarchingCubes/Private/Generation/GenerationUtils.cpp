@@ -361,14 +361,15 @@ void GenerationUtils::DrawDebugTunnel(const UWorld* InWorld, FVector const& Cent
 	DrawDebugLine(InWorld, TopEnd + Radius * ZAxis, BottomEnd + Radius * ZAxis, Color, bPersistentLines, LifeTime, DepthPriority, Thickness);
 }
 
-bool GenerationUtils::IsInsideCylider(const FVector& start, const FVector& end, const FVector& point, float radius, bool onlyHalf)
+bool GenerationUtils::IsInsideCylider(const FVector& start, const FVector& end, const FVector& point, float radius, bool onlyHalf /*= false*/)
 {
 	//UE_LOG(LogTemp, Log, TEXT("%f %f"), point.X, point.Y, point.Z);
 	FVector d = end - start;
 	FVector pd = point - start;
-	float lengthsq = FVector::DistSquared(start, end);
 
-	float dot = FVector::DotProduct(pd, d);
+	const float lengthsq = FVector::DistSquared(start, end);
+	const float dot = FVector::DotProduct(pd, d);
+
 	if (dot < 0.0f || dot > lengthsq)
 	{
 		return false;
@@ -377,9 +378,8 @@ bool GenerationUtils::IsInsideCylider(const FVector& start, const FVector& end, 
 	if (onlyHalf)
 	{
 		FVector dir = d.GetSafeNormal();
-		FVector p = start + dir * FMath::Sqrt(dot * dot / lengthsq);
-		//UE_LOG(LogTemp, Log, TEXT("%f %f %f"), p.X, p.Y, p.Z);
-		if (point.Z < p.Z)
+		FVector projection = start + dir * FMath::Sqrt(dot * dot / lengthsq);
+		if (point.Z < projection.Z)
 		{
 			return false;
 		}
@@ -394,7 +394,36 @@ bool GenerationUtils::IsInsideSphere(const FVector& center, const FVector& point
 	return FVector::DistSquared(center, point) <= radius * radius;
 }
 
-bool GenerationUtils::IsInsideCapsule(const FVector& start, const FVector& end, const FVector& point, float radius, bool onlyHalf /*= false*/)
+bool GenerationUtils::IsInsideCapsule(const FVector& start, const FVector& end, const FVector& point, float radius)
 {
-	return IsInsideSphere(start, point, radius) || IsInsideSphere(end, point, radius) || IsInsideCylider(start, end, point, radius, onlyHalf);
+	return IsInsideSphere(start, point, radius) || IsInsideSphere(end, point, radius) || IsInsideCylider(start, end, point, radius);
+}
+
+bool GenerationUtils::IsInsideHalfCapsule(const FVector& start, const FVector& end, const FVector& point, float radius)
+{
+	return IsInsideHemisphere(start, end, point, radius) || IsInsideHemisphere(end, start, point, radius) || IsInsideCylider(start, end, point, radius, true);
+}
+
+bool GenerationUtils::IsInsideHemisphere(const FVector& start, const FVector& end, const FVector& point, float radius)
+{
+	if(!IsInsideSphere(start, point, radius))
+	{
+		return false;
+	}
+
+	FVector d = end - start;
+	FVector dir = d.GetSafeNormal();
+	FVector newStart = start - dir * radius;
+
+	FVector pd = point - newStart;
+	const float lengthsq = FVector::DistSquared(newStart, end);
+	const float dot = FVector::DotProduct(pd, d);
+
+	FVector projection = newStart + dir * FMath::Sqrt(dot * dot / lengthsq);
+	if (point.Z < projection.Z)
+	{
+		return false;
+	}
+
+	return true;
 }
