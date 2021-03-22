@@ -3,6 +3,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include <DrawDebugHelpers.h>
 #include "Generation/GenerationUtils.h"
+#include "Kismet/GameplayStatics.h"
+#include "Generation/CaveActor.h"
 
 AMeshGenerator::AMeshGenerator()
 {
@@ -32,9 +34,8 @@ void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
-	const float radius = 100;
-	FVector start(200, 200, 200);
-	FVector end(600, 200, 400);
+	TArray<AActor*> caves;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACaveActor::StaticClass(), caves);
 
 	for (int x = 0; x < NumOfPoints; ++x)
 	{
@@ -42,14 +43,46 @@ void AMeshGenerator::BeginPlay()
 		{
 			for (int z = 0; z < NumOfPoints; ++z)
 			{
-				FVector4 point(x, y, z, 1);
+				FVector4 point(x, y, z, 0);
 				FVector scaledPoint = point * CubeSize;
 
-				//if(UKismetMathLibrary::IsPointInBox(scaledPoint, BoxOrigin, BoxExtent))
-				if (GenerationUtils::IsInsideCapsule(start, end, scaledPoint, radius, true))
-				{
-					point.W = 0;
+				float noise = 0.0f;
+				float frequency = NoiseScale / 100;
+				float amplitude = 1;
+				float weight = 1;
+				for (int j = 0; j < 6; j++) {
+					float n = FMath::PerlinNoise3D(scaledPoint * frequency);
+					float v = 1 - abs(n);
+					v = v * v;
+					v *= weight;
+					weight = FMath::Max(FMath::Min(v * WeightMultiplier, 1.0f), 0.0f);
+					noise += v * amplitude;
+					amplitude *= Persistence;
+					frequency *= Lacunarity;
 				}
+
+				point.W = -(scaledPoint.Z) + noise * NoiseWeight;
+				//UE_LOG(LogTemp, Log, TEXT("noise: %s"), *point.ToString());
+
+				//if (UKismetMathLibrary::IsPointInBox(scaledPoint, BoxOrigin, BoxExtent))
+				//{
+				//	point.W = FMath::RandRange(0.15f, 0.5f);
+				//}
+				//
+				//for (AActor* actor : caves)
+				//{
+				//	ACaveActor* cave = Cast<ACaveActor>(actor);
+				//	if(cave)
+				//	{
+				//		if(cave->IsPointInside(scaledPoint))
+				//		{
+				//			point.W = 1;
+				//		}
+				//	}
+				//}
+
+				//if(UKismetMathLibrary::IsPointInBox(scaledPoint, BoxOrigin, BoxExtent))
+
 
 				//float dist = FVector::DistSquared(scaledPoint, SphereCenter);
 				//if (dist < SphereRadius * SphereRadius * 3)
@@ -114,7 +147,7 @@ void AMeshGenerator::GenerateMesh()
 					Points[IndexFromCoord(x, y + 1, z + 1)]
 				};
 
-				float isoLevel = 1;
+				float isoLevel = 0.5f;
 				int cubeIndex = 0;
 				if (cubeCorners[0].W < isoLevel) cubeIndex |= 1;
 				if (cubeCorners[1].W < isoLevel) cubeIndex |= 2;
@@ -137,9 +170,9 @@ void AMeshGenerator::GenerateMesh()
 					int b2 = GenerationUtils::Edges[GenerationUtils::TriTable[cubeIndex][i+2]][1];
 				
 					Triangle tri;
-					tri.vertexA = InterpolateVertex(cubeCorners[a0], cubeCorners[b0]) * CubeSize;
-					tri.vertexB = InterpolateVertex(cubeCorners[a1], cubeCorners[b1]) * CubeSize;
-					tri.vertexC = InterpolateVertex(cubeCorners[a2], cubeCorners[b2]) * CubeSize;
+					tri.vertexA = InterpolateVertex(cubeCorners[a0], cubeCorners[b0], isoLevel) * CubeSize;
+					tri.vertexB = InterpolateVertex(cubeCorners[a1], cubeCorners[b1], isoLevel) * CubeSize;
+					tri.vertexC = InterpolateVertex(cubeCorners[a2], cubeCorners[b2], isoLevel) * CubeSize;
 					triangles.Emplace(tri);
 				}
 			}
@@ -182,9 +215,11 @@ void AMeshGenerator::GenerateMesh()
 	Mesh->CreateMeshSection_LinearColor(0, vertices, indices, normals, TArray<FVector2D>(), TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
 }
 
-FVector AMeshGenerator::InterpolateVertex(FVector4 a, FVector4 b)
+FVector AMeshGenerator::InterpolateVertex(FVector4 a, FVector4 b, float isoLevel)
 {
-	return a + (b - a) / 2;
+	float t = (isoLevel - a.W) / (b.W - a.W);
+	return a + t * (b - a);
+	return a +  (b - a) / 2;
 }
 
 int AMeshGenerator::IndexFromCoord(int x, int y, int z)

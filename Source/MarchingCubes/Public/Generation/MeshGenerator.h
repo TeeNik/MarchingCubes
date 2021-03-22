@@ -45,12 +45,21 @@ protected:
 	UPROPERTY(EditAnywhere)
 	FVector BoxExtent;
 
+	UPROPERTY(EditAnywhere)
+	float Persistence = 0.5f;
+	UPROPERTY(EditAnywhere)
+	float Lacunarity = 2.0f;
+	UPROPERTY(EditAnywhere)
+	float NoiseWeight = 1.0f;
+	UPROPERTY(EditAnywhere)
+	float NoiseScale = 100.0f;
+	UPROPERTY(EditAnywhere)
+	float WeightMultiplier = 1.0f;
+
 private:
 	void GenerateMesh();
-	FVector InterpolateVertex(FVector4 a, FVector4 b);
+	FVector InterpolateVertex(FVector4 a, FVector4 b, float isoLevel);
 	int IndexFromCoord(int x, int y, int z);
 	TArray<FVector4> Points;
-
-
 
 };
