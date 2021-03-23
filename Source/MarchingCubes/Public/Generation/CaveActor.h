@@ -15,6 +15,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Draw() const;
 
+	bool IsPointInside(const FVector& point);
+
 protected:
 	virtual void BeginPlay() override;
 
