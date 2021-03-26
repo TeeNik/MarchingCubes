@@ -1,8 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "FastNoiseWrapper.h"
 #include "MeshGenerator.generated.h"
 
 class UProceduralMeshComponent;
@@ -24,7 +24,11 @@ protected:
 	UProceduralMeshComponent* Mesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USceneComponent* Root;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UFastNoiseWrapper* _Noise;
 
+	UPROPERTY(EditAnywhere)
+	FVector Bounds;
 	UPROPERTY(EditAnywhere)
 	int NumOfPoints = 10;
 	UPROPERTY(EditAnywhere)
@@ -55,6 +59,15 @@ protected:
 	float NoiseScale = 100.0f;
 	UPROPERTY(EditAnywhere)
 	float WeightMultiplier = 1.0f;
+
+	UPROPERTY(EditAnywhere)
+	float Amplitude = 1.0f;
+	UPROPERTY(EditAnywhere)
+	float MaxNoiseValue = 1.0f;
+	UPROPERTY(EditAnywhere)
+	bool DoGenerateMesh;
+	UPROPERTY(EditAnywhere)
+	float IsoLevel = 0.5f;
 
 private:
 	void GenerateMesh();

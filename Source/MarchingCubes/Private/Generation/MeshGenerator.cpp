@@ -16,6 +16,7 @@ AMeshGenerator::AMeshGenerator()
 	Mesh->SetupAttachment(Root);
 	Mesh->bUseAsyncCooking = true;
 
+	_Noise = CreateDefaultSubobject<UFastNoiseWrapper>(TEXT("Noise"));
 }
 
 void AMeshGenerator::AddPoint(FVector hitPoint, bool isAddition)
@@ -34,34 +35,32 @@ void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
+	_Noise->SetupFastNoise(EFastNoise_NoiseType::PerlinFractal, 1337, 0.02);
+
 	TArray<AActor*> caves;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACaveActor::StaticClass(), caves);
 
-	for (int x = 0; x < NumOfPoints; ++x)
+	for (int x = 0; x < Bounds.X; ++x)
 	{
-		for (int y = 0; y < NumOfPoints; ++y)
+		for (int y = 0; y < Bounds.Y; ++y)
 		{
-			for (int z = 0; z < NumOfPoints; ++z)
+			for (int z = 0; z < Bounds.Z; ++z)
 			{
 				FVector4 point(x, y, z, 0);
 				FVector scaledPoint = point * CubeSize;
 
-				float noise = 0.0f;
-				float frequency = NoiseScale / 100;
-				float amplitude = 1;
-				float weight = 1;
-				for (int j = 0; j < 6; j++) {
-					float n = FMath::PerlinNoise3D(scaledPoint * frequency);
-					float v = 1 - abs(n);
-					v = v * v;
-					v *= weight;
-					weight = FMath::Max(FMath::Min(v * WeightMultiplier, 1.0f), 0.0f);
-					noise += v * amplitude;
-					amplitude *= Persistence;
-					frequency *= Lacunarity;
-				}
+				float height = UKismetMathLibrary::NormalizeToRange(point.Z, 0.0f, Bounds.Z);
+				float noise = FMath::PerlinNoise3D(FVector(x,y,z) * NoiseScale);
+				noise = (noise + 1) / 2;
+				point.W = noise + height;
 
-				point.W = -(scaledPoint.Z) + noise * NoiseWeight;
+				//FVector noisePoint = point * NoiseScale;
+				//float noise = _Noise->GetNoise3D(noisePoint.X, noisePoint.Y, noisePoint.Z);
+				//UE_LOG(LogTemp, Log, TEXT("noise: %f"), noise);
+				//noise = point.Z + noise * Amplitude;
+				//noise = FMath::Clamp(noise, 0.0f, static_cast<float>(MaxNoiseValue));
+				//noise = UKismetMathLibrary::NormalizeToRange(noise, 0.0f, MaxNoiseValue);
+				//point.W = noise;
 				//UE_LOG(LogTemp, Log, TEXT("noise: %s"), *point.ToString());
 
 				//if (UKismetMathLibrary::IsPointInBox(scaledPoint, BoxOrigin, BoxExtent))
@@ -89,18 +88,27 @@ void AMeshGenerator::BeginPlay()
 				//{
 				//	point.W = 0;
 				//}
+				//else
+				//{
+				//	point.W = 1;
+				//}
 
-				if (DrawDebugPoints)
+				if (DrawDebugPoints && point.W < IsoLevel)
 				{
-					FColor color = point.W ? FColor::Green : FColor::Red;
-					DrawDebugSphere(GetWorld(), scaledPoint, 2, 4, color, false, 25);
+					float value = point.W * 255;
+					FColor color = FColor(value, value, value);
+					//FColor color = point.W ? FColor::Green : FColor::Red;
+					DrawDebugSphere(GetWorld(), scaledPoint, 10, 4, color, false, 25);
 				}
 				Points.Emplace(point);
 			}
 		}
 	}
-	GenerateMesh();
 
+	if(DoGenerateMesh)
+	{
+		GenerateMesh();
+	}
 }
 
 void AMeshGenerator::GenerateMesh()
@@ -126,13 +134,13 @@ void AMeshGenerator::GenerateMesh()
 
 	TArray<Triangle> triangles;
 
-	for (int x = 0; x < NumOfPoints; ++x)
+	for (int x = 0; x < Bounds.X; ++x)
 	{
-		for (int y = 0; y < NumOfPoints; ++y)
+		for (int y = 0; y < Bounds.Y; ++y)
 		{
-			for (int z = 0; z < NumOfPoints; ++z)
+			for (int z = 0; z < Bounds.Z; ++z)
 			{
-				if (x >= NumOfPoints - 1 || y >= NumOfPoints - 1 || z >= NumOfPoints - 1) {
+				if (x >= Bounds.X - 1 || y >= Bounds.Y - 1 || z >= Bounds.Z - 1) {
 					break;
 				}
 
@@ -147,7 +155,7 @@ void AMeshGenerator::GenerateMesh()
 					Points[IndexFromCoord(x, y + 1, z + 1)]
 				};
 
-				float isoLevel = 0.5f;
+				float isoLevel = IsoLevel;
 				int cubeIndex = 0;
 				if (cubeCorners[0].W < isoLevel) cubeIndex |= 1;
 				if (cubeCorners[1].W < isoLevel) cubeIndex |= 2;
@@ -217,12 +225,13 @@ void AMeshGenerator::GenerateMesh()
 
 FVector AMeshGenerator::InterpolateVertex(FVector4 a, FVector4 b, float isoLevel)
 {
+	//return a + (b - a) / 2;
+
 	float t = (isoLevel - a.W) / (b.W - a.W);
 	return a + t * (b - a);
-	return a +  (b - a) / 2;
 }
 
 int AMeshGenerator::IndexFromCoord(int x, int y, int z)
 {
-	return x + y * NumOfPoints + z * NumOfPoints * NumOfPoints;
+	return x + y * Bounds.Y + z * Bounds.X * Bounds.Y;
 }
