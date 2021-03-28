@@ -25,7 +25,9 @@ void AMeshGenerator::AddPoint(FVector hitPoint, bool isAddition)
 	{
 		if(FVector::Dist(point * CubeSize, hitPoint) < AdditionRadius)
 		{
-			point.W = isAddition ? 0.0f : 1.0f;
+			float value = point.W;
+			value += isAddition ? -AdditionValue : AdditionValue;
+			point.W = value;
 		}
 	}
 	GenerateMesh();
@@ -53,6 +55,12 @@ void AMeshGenerator::BeginPlay()
 				float noise = FMath::PerlinNoise3D(FVector(x,y,z) * NoiseScale);
 				noise = (noise + 1) / 2;
 				point.W = noise + height;
+
+				if(point.Z == 0 && point.W > IsoLevel)
+				{
+					point.W = 0.49f;
+					//point.W = 0.5f - FMath::RandRange(0.15, 0.35f);
+				}
 
 				//FVector noisePoint = point * NoiseScale;
 				//float noise = _Noise->GetNoise3D(noisePoint.X, noisePoint.Y, noisePoint.Z);
