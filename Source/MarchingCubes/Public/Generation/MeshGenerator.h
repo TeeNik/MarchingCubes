@@ -39,15 +39,8 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	float AdditionRadius = 100.0f;
-
 	UPROPERTY(EditAnywhere)
-	float SphereRadius = 150.0f;
-	UPROPERTY(EditAnywhere)
-	FVector SphereCenter;
-	UPROPERTY(EditAnywhere)
-	FVector BoxOrigin;
-	UPROPERTY(EditAnywhere)
-	FVector BoxExtent;
+	float AdditionValue = 0.05f;
 
 	UPROPERTY(EditAnywhere)
 	float Persistence = 0.5f;

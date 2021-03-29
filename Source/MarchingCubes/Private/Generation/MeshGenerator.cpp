@@ -54,7 +54,13 @@ void AMeshGenerator::BeginPlay()
 				float height = UKismetMathLibrary::NormalizeToRange(point.Z, 0.0f, Bounds.Z);
 				float noise = FMath::PerlinNoise3D(FVector(x,y,z) * NoiseScale);
 				noise = (noise + 1) / 2;
-				point.W = noise + height;
+				point.W = noise + height / 2;
+
+
+				if(x == 0 || y == 0 || x >= Bounds.X - 2 || y >= Bounds.Y - 2 || z >= Bounds.Z - 2)
+				{
+					point.W = FMath::RandRange(0.15f, 0.25f);
+				}
 
 				if(point.Z == 0 && point.W > IsoLevel)
 				{
@@ -101,7 +107,7 @@ void AMeshGenerator::BeginPlay()
 				//	point.W = 1;
 				//}
 
-				if (DrawDebugPoints && point.W < IsoLevel)
+				if (DrawDebugPoints /*&& point.W < IsoLevel*/)
 				{
 					float value = point.W * 255;
 					FColor color = FColor(value, value, value);
