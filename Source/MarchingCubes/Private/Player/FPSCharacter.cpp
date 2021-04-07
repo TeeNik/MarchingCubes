@@ -4,7 +4,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/InputSettings.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Generation/MeshGenerator.h"
+#include "DrawDebugHelpers.h"
 
 AFPSCharacter::AFPSCharacter()
 {
@@ -45,6 +48,36 @@ void AFPSCharacter::BeginPlay()
 	FP_Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 }
 
+void AFPSCharacter::Tick(float DeltaTime)
+{
+	if(LaserParticle)
+	{
+		FVector start = FP_MuzzleLocation->GetComponentLocation();
+		LaserParticle->SetBeamSourcePoint(0, start, 0);
+		
+		FVector target = start + FirstPersonCameraComponent->GetForwardVector() * 1000;
+		LaserParticle->SetBeamTargetPoint(0, target, 0);
+	}
+
+	if(IsRMBPressed && GetWorld()->GetTimeSeconds() > NextFireTime)
+	{
+		NextFireTime = GetWorld()->GetTimeSeconds() + FireTimeout;
+		FHitResult hit;
+		FVector start = FirstPersonCameraComponent->GetComponentLocation();
+		FVector end = start + FirstPersonCameraComponent->GetForwardVector() * 10000;
+		//DrawDebugLine(GetWorld(), start, end, FColor::Green, false, 5, 0, 2);
+		bool result = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECollisionChannel::ECC_Visibility);
+		if (result)
+		{
+			AMeshGenerator* generator = Cast<AMeshGenerator>(hit.Actor);
+			if (generator)
+			{
+				generator->AddPoint(hit.ImpactPoint, false);
+			}
+		}
+	}
+}
+
 void AFPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	check(PlayerInputComponent);
@@ -53,12 +86,26 @@ void AFPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("LMB", IE_Pressed, this, &AFPSCharacter::OnFire);
+	PlayerInputComponent->BindAction("RMB", IE_Pressed, this, &AFPSCharacter::OnRMBPressed);
+	PlayerInputComponent->BindAction("RMB", IE_Released, this, &AFPSCharacter::OnRMBReleased);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFPSCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFPSCharacter::MoveRight);
 
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+}
+
+void AFPSCharacter::OnRMBPressed()
+{
+	//LaserParticle = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserTemplate, FVector(0, 0, 0));
+
+	IsRMBPressed = true;
+}
+
+void AFPSCharacter::OnRMBReleased()
+{
+	IsRMBPressed = false;
 }
 
 void AFPSCharacter::OnFire()

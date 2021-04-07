@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,76 +11,60 @@ class UCameraComponent;
 class UMotionControllerComponent;
 class UAnimMontage;
 class USoundBase;
+class UParticleSystem;
+class UParticleSystemComponent;
 
-UCLASS(config=Game)
+UCLASS()
 class AFPSCharacter : public ACharacter
 {
 	GENERATED_BODY()
-
-	//UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	//USkeletalMeshComponent* Mesh1P;
-
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	USkeletalMeshComponent* FP_Gun;
-
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	USceneComponent* FP_MuzzleLocation;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FirstPersonCameraComponent;
 
 public:
 	AFPSCharacter();
 
 protected:
 	virtual void BeginPlay();
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 
-public:
-	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	float BaseTurnRate;
-
-	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	float BaseLookUpRate;
-
-	/** Gun muzzle's offset from the characters location */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FVector GunOffset;
-
-	/** Projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category=Projectile)
+	UPROPERTY(EditDefaultsOnly, Category = Projectile)
 	TSubclassOf<AActor> ProjectileClass;
-
-	/** Sound to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	USoundBase* FireSound;
-
-	/** AnimMontage to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* FireAnimation;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UParticleSystem* LaserTemplate;
 
-protected:
-	
-	/** Fires a projectile. */
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	USkeletalMeshComponent* FP_Gun;
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	USceneComponent* FP_MuzzleLocation;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* FirstPersonCameraComponent;
+
+	UPROPERTY(EditAnywhere)
+	float FireTimeout = 0.2f;
+
+private:
+
 	void OnFire();
+	void OnRMBPressed();
+	void OnRMBReleased();
 
-	/** Handles moving forward/backward */
 	void MoveForward(float Val);
-
-	/** Handles stafing movement, left and right */
 	void MoveRight(float Val);
 
-protected:
-	// APawn interface
-	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
-	// End of APawn interface
+	UPROPERTY(Transient)
+	UParticleSystemComponent* LaserParticle;
 
-public:
-	/** Returns Mesh1P subobject **/
-	//USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
-	/** Returns FirstPersonCameraComponent subobject **/
-	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
-
+	bool IsRMBPressed = false;
+	float NextFireTime = 0.0f;
 };
 
