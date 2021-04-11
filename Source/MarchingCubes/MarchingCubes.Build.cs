@@ -8,8 +8,7 @@ public class MarchingCubes : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent",
-            "FastNoiseGenerator", "FastNoise" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent", "Niagara" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
