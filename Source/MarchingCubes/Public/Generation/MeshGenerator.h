@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "FastNoiseWrapper.h"
+//#include "FastNoiseWrapper.h"
 #include "MeshGenerator.generated.h"
 
 class UProceduralMeshComponent;
@@ -19,13 +19,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	UProceduralMeshComponent* Mesh;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	USceneComponent* Root;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	UFastNoiseWrapper* _Noise;
 
 	UPROPERTY(EditAnywhere)
 	FVector Bounds;
@@ -63,9 +56,5 @@ protected:
 	float IsoLevel = 0.5f;
 
 private:
-	void GenerateMesh();
-	FVector InterpolateVertex(FVector4 a, FVector4 b, float isoLevel);
-	int IndexFromCoord(int x, int y, int z);
-	TArray<FVector4> Points;
-
+	void CreateChunk(FVector chunkOrigin);
 };
