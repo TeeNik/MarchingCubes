@@ -8,6 +8,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Generation/MeshGenerator.h"
 #include "DrawDebugHelpers.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 AFPSCharacter::AFPSCharacter()
 {
@@ -46,17 +48,17 @@ void AFPSCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	FP_Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+	
 }
 
 void AFPSCharacter::Tick(float DeltaTime)
 {
-	if(LaserParticle)
+	
+	if(IsValid(LaserParticle))
 	{
 		FVector start = FP_MuzzleLocation->GetComponentLocation();
-		LaserParticle->SetBeamSourcePoint(0, start, 0);
-		
 		FVector target = start + FirstPersonCameraComponent->GetForwardVector() * 1000;
-		LaserParticle->SetBeamTargetPoint(0, target, 0);
+		LaserParticle->SetVectorParameter(TEXT("User.BeamEnd"), target);
 	}
 
 	if(IsRMBPressed && GetWorld()->GetTimeSeconds() > NextFireTime)
@@ -100,12 +102,19 @@ void AFPSCharacter::OnRMBPressed()
 {
 	//LaserParticle = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserTemplate, FVector(0, 0, 0));
 
+	if(!IsValid(LaserParticle))
+	{
+		LaserParticle = UNiagaraFunctionLibrary::SpawnSystemAttached(LaserTemplate, FP_MuzzleLocation, TEXT("None"),
+			FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+	}
+
 	IsRMBPressed = true;
 }
 
 void AFPSCharacter::OnRMBReleased()
 {
 	IsRMBPressed = false;
+	DestroyLaser();
 }
 
 void AFPSCharacter::OnFire()

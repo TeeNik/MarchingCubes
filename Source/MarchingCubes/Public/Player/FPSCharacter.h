@@ -13,6 +13,8 @@ class UAnimMontage;
 class USoundBase;
 class UParticleSystem;
 class UParticleSystemComponent;
+class UNiagaraComponent;
+class UNiagaraSystem;
 
 UCLASS()
 class AFPSCharacter : public ACharacter
@@ -39,18 +41,22 @@ protected:
 	USoundBase* FireSound;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* FireAnimation;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UParticleSystem* LaserTemplate;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* FirstPersonCameraComponent;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	USkeletalMeshComponent* FP_Gun;
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	USceneComponent* FP_MuzzleLocation;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FirstPersonCameraComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UNiagaraSystem* LaserTemplate;
 
 	UPROPERTY(EditAnywhere)
 	float FireTimeout = 0.2f;
+	UFUNCTION(BlueprintImplementableEvent)
+	void DestroyLaser();
+	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite)
+	UNiagaraComponent* LaserParticle;
 
 private:
 
@@ -60,9 +66,6 @@ private:
 
 	void MoveForward(float Val);
 	void MoveRight(float Val);
-
-	UPROPERTY(Transient)
-	UParticleSystemComponent* LaserParticle;
 
 	bool IsRMBPressed = false;
 	float NextFireTime = 0.0f;
