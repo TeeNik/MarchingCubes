@@ -42,7 +42,7 @@ void AChunk::Create(FVector origin, int numOfPoints, float noiseScale, float iso
 			for (int z = 0; z < NumOfPoints; ++z)
 			{
 				FVector4 point(x, y, z, 0);
-				FVector realPoint = point + origin * numOfPoints;
+				FVector realPoint = point + origin * (numOfPoints - 1);
 				//float height = UKismetMathLibrary::NormalizeToRange(point.Z, 0.0f, Bounds.Z);
 				float height = 0.0f;
 				float noise = FMath::PerlinNoise3D(realPoint * noiseScale);
@@ -107,9 +107,9 @@ void AChunk::Create(FVector origin, int numOfPoints, float noiseScale, float iso
 					int b2 = GenerationUtils::Edges[GenerationUtils::TriTable[cubeIndex][i + 2]][1];
 
 					Triangle tri;
-					tri.vertexA = (InterpolateVertex(cubeCorners[a0], cubeCorners[b0], isoLevel) + origin) * cubeSize;
-					tri.vertexB = (InterpolateVertex(cubeCorners[a1], cubeCorners[b1], isoLevel) + origin) * cubeSize;
-					tri.vertexC = (InterpolateVertex(cubeCorners[a2], cubeCorners[b2], isoLevel) + origin) * cubeSize;
+					tri.vertexA = (InterpolateVertex(cubeCorners[a0], cubeCorners[b0], isoLevel)) * cubeSize;
+					tri.vertexB = (InterpolateVertex(cubeCorners[a1], cubeCorners[b1], isoLevel)) * cubeSize;
+					tri.vertexC = (InterpolateVertex(cubeCorners[a2], cubeCorners[b2], isoLevel)) * cubeSize;
 					triangles.Emplace(tri);
 				}
 			}
@@ -158,7 +158,7 @@ FVector AChunk::InterpolateVertex(FVector4 a, FVector4 b, float isoLevel)
 	return a + t * (b - a);
 }
 
-int AChunk::IndexFromCoord(int x, int y, int z)
+int AChunk::IndexFromCoord(int x, int y, int z) const
 {
 	return x + y * NumOfPoints + z * NumOfPoints * NumOfPoints;
 }

@@ -23,8 +23,8 @@ protected:
 	USceneComponent* Root;
 
 private:
-	FVector InterpolateVertex(FVector4 a, FVector4 b, float isoLevel);
-	int IndexFromCoord(int x, int y, int z);
+	static FVector InterpolateVertex(FVector4 a, FVector4 b, float isoLevel);
+	int IndexFromCoord(int x, int y, int z) const;
 
 	int NumOfPoints = 0;
 

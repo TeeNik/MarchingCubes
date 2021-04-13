@@ -136,7 +136,7 @@ void AMeshGenerator::BeginPlay()
 			for (int z = 0; z < Bounds.Z; ++z)
 			{
 				FVector origin(x, y, z);
-				FVector location = origin * NumOfPoints * CubeSize;
+				FVector location = origin * (NumOfPoints - 1) * CubeSize;
 				AChunk* chunk = GetWorld()->SpawnActor<AChunk>(AChunk::StaticClass(), location, FRotator::ZeroRotator);
 				chunk->Create(origin, NumOfPoints, NoiseScale, IsoLevel, CubeSize);
 			}
