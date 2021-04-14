@@ -15,26 +15,10 @@ AChunk::AChunk()
 
 void AChunk::Create(FVector origin, int numOfPoints, float noiseScale, float isoLevel, float cubeSize)
 {
-	struct Triangle
-	{
-		FVector vertexA;
-		FVector vertexB;
-		FVector vertexC;
-
-		FVector operator [] (int i) const
-		{
-			switch (i) {
-			case 0:
-				return vertexA;
-			case 1:
-				return vertexB;
-			default:
-				return vertexC;
-			}
-		};
-	};
-
 	NumOfPoints = numOfPoints;
+	IsoLevel = isoLevel;
+	CubeSize = cubeSize;
+
 	for (int x = 0; x < NumOfPoints; ++x)
 	{
 		for (int y = 0; y < NumOfPoints; ++y)
@@ -62,6 +46,29 @@ void AChunk::Create(FVector origin, int numOfPoints, float noiseScale, float iso
 			}
 		}
 	}
+	GenerateMesh();
+}
+
+void AChunk::GenerateMesh()
+{
+	struct Triangle
+	{
+		FVector vertexA;
+		FVector vertexB;
+		FVector vertexC;
+
+		FVector operator [] (int i) const
+		{
+			switch (i) {
+			case 0:
+				return vertexA;
+			case 1:
+				return vertexB;
+			default:
+				return vertexC;
+			}
+		};
+	};
 
 	TArray<Triangle> triangles;
 	for (int x = 0; x < NumOfPoints; ++x)
@@ -86,14 +93,14 @@ void AChunk::Create(FVector origin, int numOfPoints, float noiseScale, float iso
 				};
 
 				int cubeIndex = 0;
-				if (cubeCorners[0].W < isoLevel) cubeIndex |= 1;
-				if (cubeCorners[1].W < isoLevel) cubeIndex |= 2;
-				if (cubeCorners[2].W < isoLevel) cubeIndex |= 4;
-				if (cubeCorners[3].W < isoLevel) cubeIndex |= 8;
-				if (cubeCorners[4].W < isoLevel) cubeIndex |= 16;
-				if (cubeCorners[5].W < isoLevel) cubeIndex |= 32;
-				if (cubeCorners[6].W < isoLevel) cubeIndex |= 64;
-				if (cubeCorners[7].W < isoLevel) cubeIndex |= 128;
+				if (cubeCorners[0].W < IsoLevel) cubeIndex |= 1;
+				if (cubeCorners[1].W < IsoLevel) cubeIndex |= 2;
+				if (cubeCorners[2].W < IsoLevel) cubeIndex |= 4;
+				if (cubeCorners[3].W < IsoLevel) cubeIndex |= 8;
+				if (cubeCorners[4].W < IsoLevel) cubeIndex |= 16;
+				if (cubeCorners[5].W < IsoLevel) cubeIndex |= 32;
+				if (cubeCorners[6].W < IsoLevel) cubeIndex |= 64;
+				if (cubeCorners[7].W < IsoLevel) cubeIndex |= 128;
 
 				for (int i = 0; GenerationUtils::TriTable[cubeIndex][i] != -1; i += 3)
 				{
@@ -107,9 +114,9 @@ void AChunk::Create(FVector origin, int numOfPoints, float noiseScale, float iso
 					int b2 = GenerationUtils::Edges[GenerationUtils::TriTable[cubeIndex][i + 2]][1];
 
 					Triangle tri;
-					tri.vertexA = (InterpolateVertex(cubeCorners[a0], cubeCorners[b0], isoLevel)) * cubeSize;
-					tri.vertexB = (InterpolateVertex(cubeCorners[a1], cubeCorners[b1], isoLevel)) * cubeSize;
-					tri.vertexC = (InterpolateVertex(cubeCorners[a2], cubeCorners[b2], isoLevel)) * cubeSize;
+					tri.vertexA = (InterpolateVertex(cubeCorners[a0], cubeCorners[b0], IsoLevel)) * CubeSize;
+					tri.vertexB = (InterpolateVertex(cubeCorners[a1], cubeCorners[b1], IsoLevel)) * CubeSize;
+					tri.vertexC = (InterpolateVertex(cubeCorners[a2], cubeCorners[b2], IsoLevel)) * CubeSize;
 					triangles.Emplace(tri);
 				}
 			}
@@ -148,8 +155,22 @@ void AChunk::Create(FVector origin, int numOfPoints, float noiseScale, float iso
 	{
 		normals[i].Normalize();
 	}
-
 	Mesh->CreateMeshSection_LinearColor(0, vertices, indices, normals, TArray<FVector2D>(), TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
+}
+
+void AChunk::AddPoint(FVector hitPoint, bool isAddition)
+{
+	//for (FVector4& point : Points)
+	//{
+	//	float dist = FVector::Dist(point * CubeSize, hitPoint);
+	//	if(FVector::Dist(point * CubeSize, hitPoint) < AdditionRadius)
+	//	{
+	//		float value = point.W;
+	//		value += (isAddition ? -AdditionValue : AdditionValue) * (1-dist/AdditionRadius);
+	//		point.W = value;
+	//	}
+	//}
+	GenerateMesh();
 }
 
 FVector AChunk::InterpolateVertex(FVector4 a, FVector4 b, float isoLevel)

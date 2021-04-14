@@ -31,7 +31,7 @@ AFPSCharacter::AFPSCharacter()
 	GetMesh()->SetRelativeLocation(FVector(-0.5f, -4.4f, -155.7f));
 
 	FP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP_Gun"));
-	FP_Gun->SetOnlyOwnerSee(false);			// otherwise won't be visible in the multiplayer
+	FP_Gun->SetOnlyOwnerSee(false);
 	FP_Gun->bCastDynamicShadow = false;
 	FP_Gun->CastShadow = false;
 	FP_Gun->SetupAttachment(RootComponent);
