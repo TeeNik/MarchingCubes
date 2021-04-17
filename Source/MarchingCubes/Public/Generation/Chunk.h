@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Generation/ChunkSettings.h"
 #include "Chunk.generated.h"
 
 class UProceduralMeshComponent;
@@ -14,8 +15,10 @@ class MARCHINGCUBES_API AChunk : public AActor
 public:	
 	AChunk();
 
-	void Create(FVector origin, int numOfPoints, float noiseScale, float isoLevel, float cubeSize);
+	void Create(const FVector& origin, const FChunkSettings& chunkSettings);
 	void AddPoint(FVector hitPoint, bool isAddition);
+
+	FVector Origin;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -28,9 +31,7 @@ private:
 	int IndexFromCoord(int x, int y, int z) const;
 	void GenerateMesh();
 
-	int NumOfPoints = 0;
-	float IsoLevel = 0.5f;
-	float CubeSize = 1.0f;
+	FChunkSettings ChunkSettings;
 
 	UPROPERTY()
 	TArray<FVector4> Points;

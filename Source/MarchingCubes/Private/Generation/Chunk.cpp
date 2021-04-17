@@ -2,6 +2,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Generation/GenerationUtils.h"
 #include "ProceduralMeshComponent.h"
+#include "DrawDebugHelpers.h"
 
 AChunk::AChunk()
 {
@@ -13,23 +14,22 @@ AChunk::AChunk()
 	Mesh->bUseAsyncCooking = true;
 }
 
-void AChunk::Create(FVector origin, int numOfPoints, float noiseScale, float isoLevel, float cubeSize)
+void AChunk::Create(const FVector& origin, const FChunkSettings& chunkSettings)
 {
-	NumOfPoints = numOfPoints;
-	IsoLevel = isoLevel;
-	CubeSize = cubeSize;
+	ChunkSettings = chunkSettings;
+	Origin = origin;
 
-	for (int x = 0; x < NumOfPoints; ++x)
+	for (int x = 0; x < ChunkSettings.NumOfPoints; ++x)
 	{
-		for (int y = 0; y < NumOfPoints; ++y)
+		for (int y = 0; y < ChunkSettings.NumOfPoints; ++y)
 		{
-			for (int z = 0; z < NumOfPoints; ++z)
+			for (int z = 0; z < ChunkSettings.NumOfPoints; ++z)
 			{
 				FVector4 point(x, y, z, 0);
-				FVector realPoint = point + origin * (numOfPoints - 1);
+				FVector realPoint = point + origin * (ChunkSettings.NumOfPoints - 1);
 				//float height = UKismetMathLibrary::NormalizeToRange(point.Z, 0.0f, Bounds.Z);
 				float height = 0.0f;
-				float noise = FMath::PerlinNoise3D(realPoint * noiseScale);
+				float noise = FMath::PerlinNoise3D(realPoint * ChunkSettings.NoiseScale);
 				noise = (noise + 1) / 2;
 				point.W = noise + height / 2;
 
@@ -38,10 +38,10 @@ void AChunk::Create(FVector origin, int numOfPoints, float noiseScale, float iso
 				//	point.W = FMath::RandRange(0.15f, 0.25f);
 				//}
 				//
-				//if (point.Z < 3 && point.W > IsoLevel)
-				//{
-				//	point.W = 0.49f;
-				//}
+				if (origin.Z == 0 && point.Z < ChunkSettings.FloorLevel && point.W > ChunkSettings.IsoLevel)
+				{
+					point.W = FMath::RandRange(0.15f, 0.25f);
+				}
 				Points.Emplace(point);
 			}
 		}
@@ -71,13 +71,17 @@ void AChunk::GenerateMesh()
 	};
 
 	TArray<Triangle> triangles;
-	for (int x = 0; x < NumOfPoints; ++x)
+	int32 numOfPoints = ChunkSettings.NumOfPoints;
+	float isoLevel = ChunkSettings.IsoLevel;
+	float cubeSize = ChunkSettings.CubeSize;
+
+	for (int x = 0; x < numOfPoints; ++x)
 	{
-		for (int y = 0; y < NumOfPoints; ++y)
+		for (int y = 0; y < numOfPoints; ++y)
 		{
-			for (int z = 0; z < NumOfPoints; ++z)
+			for (int z = 0; z < numOfPoints; ++z)
 			{
-				if (x >= NumOfPoints - 1 || y >= NumOfPoints - 1 || z >= NumOfPoints - 1) {
+				if (x >= numOfPoints - 1 || y >= numOfPoints - 1 || z >= numOfPoints - 1) {
 					break;
 				}
 
@@ -93,14 +97,14 @@ void AChunk::GenerateMesh()
 				};
 
 				int cubeIndex = 0;
-				if (cubeCorners[0].W < IsoLevel) cubeIndex |= 1;
-				if (cubeCorners[1].W < IsoLevel) cubeIndex |= 2;
-				if (cubeCorners[2].W < IsoLevel) cubeIndex |= 4;
-				if (cubeCorners[3].W < IsoLevel) cubeIndex |= 8;
-				if (cubeCorners[4].W < IsoLevel) cubeIndex |= 16;
-				if (cubeCorners[5].W < IsoLevel) cubeIndex |= 32;
-				if (cubeCorners[6].W < IsoLevel) cubeIndex |= 64;
-				if (cubeCorners[7].W < IsoLevel) cubeIndex |= 128;
+				if (cubeCorners[0].W < isoLevel) cubeIndex |= 1;
+				if (cubeCorners[1].W < isoLevel) cubeIndex |= 2;
+				if (cubeCorners[2].W < isoLevel) cubeIndex |= 4;
+				if (cubeCorners[3].W < isoLevel) cubeIndex |= 8;
+				if (cubeCorners[4].W < isoLevel) cubeIndex |= 16;
+				if (cubeCorners[5].W < isoLevel) cubeIndex |= 32;
+				if (cubeCorners[6].W < isoLevel) cubeIndex |= 64;
+				if (cubeCorners[7].W < isoLevel) cubeIndex |= 128;
 
 				for (int i = 0; GenerationUtils::TriTable[cubeIndex][i] != -1; i += 3)
 				{
@@ -114,9 +118,9 @@ void AChunk::GenerateMesh()
 					int b2 = GenerationUtils::Edges[GenerationUtils::TriTable[cubeIndex][i + 2]][1];
 
 					Triangle tri;
-					tri.vertexA = (InterpolateVertex(cubeCorners[a0], cubeCorners[b0], IsoLevel)) * CubeSize;
-					tri.vertexB = (InterpolateVertex(cubeCorners[a1], cubeCorners[b1], IsoLevel)) * CubeSize;
-					tri.vertexC = (InterpolateVertex(cubeCorners[a2], cubeCorners[b2], IsoLevel)) * CubeSize;
+					tri.vertexA = (InterpolateVertex(cubeCorners[a0], cubeCorners[b0], isoLevel)) * cubeSize;
+					tri.vertexB = (InterpolateVertex(cubeCorners[a1], cubeCorners[b1], isoLevel)) * cubeSize;
+					tri.vertexC = (InterpolateVertex(cubeCorners[a2], cubeCorners[b2], isoLevel)) * cubeSize;
 					triangles.Emplace(tri);
 				}
 			}
@@ -160,16 +164,24 @@ void AChunk::GenerateMesh()
 
 void AChunk::AddPoint(FVector hitPoint, bool isAddition)
 {
-	//for (FVector4& point : Points)
-	//{
-	//	float dist = FVector::Dist(point * CubeSize, hitPoint);
-	//	if(FVector::Dist(point * CubeSize, hitPoint) < AdditionRadius)
-	//	{
-	//		float value = point.W;
-	//		value += (isAddition ? -AdditionValue : AdditionValue) * (1-dist/AdditionRadius);
-	//		point.W = value;
-	//	}
-	//}
+	for (FVector4& point : Points)
+	{
+		FVector localPoint = GetActorTransform().InverseTransformPosition(hitPoint);
+		float dist = FVector::Dist(point * ChunkSettings.CubeSize, localPoint);
+		if(dist < ChunkSettings.AdditionRadius)
+		{
+			float value = point.W;
+			value += (isAddition ? -ChunkSettings.AdditionValue : ChunkSettings.AdditionValue) * (1-dist / ChunkSettings.AdditionRadius);
+			point.W = value;
+
+			{
+				float colorValue = point.W * 255;
+				FColor color = FColor(colorValue, 0, 1 - colorValue);
+				//DrawDebugSphere(GetWorld(), GetActorTransform().TransformPosition(point * ChunkSettings.CubeSize), 10, 4, color, false, 25);
+			}
+			
+		}
+	}
 	GenerateMesh();
 }
 
@@ -181,5 +193,5 @@ FVector AChunk::InterpolateVertex(FVector4 a, FVector4 b, float isoLevel)
 
 int AChunk::IndexFromCoord(int x, int y, int z) const
 {
-	return x + y * NumOfPoints + z * NumOfPoints * NumOfPoints;
+	return x + y * ChunkSettings.NumOfPoints + z * ChunkSettings.NumOfPoints * ChunkSettings.NumOfPoints;
 }
