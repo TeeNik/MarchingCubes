@@ -11,26 +11,44 @@ AMeshGenerator::AMeshGenerator()
 {
 }
 
-void AMeshGenerator::AddPoint(FVector hitPoint, bool isAddition)
+void AMeshGenerator::AddPoint(AChunk* chunk, FVector hitPoint, bool isAddition)
 {
-	//for (FVector4& point : Points)
-	//{
-	//	float dist = FVector::Dist(point * CubeSize, hitPoint);
-	//	if(FVector::Dist(point * CubeSize, hitPoint) < AdditionRadius)
-	//	{
-	//		float value = point.W;
-	//		value += (isAddition ? -AdditionValue : AdditionValue) * (1-dist/AdditionRadius);
-	//		point.W = value;
-	//	}
-	//}
-	//GenerateMesh();
+	/*
+	for (int i = -1; i <= 1; ++i)
+	{
+		for (int j = -1; j <= 1; ++j)
+		{
+			for(int k = -1; k <= 1; ++k)
+			{
+				int x = chunk->Origin.X + i;
+				int y = chunk->Origin.Y + j;
+				int z = chunk->Origin.Z + k;
+
+				if((x >= 0 || x < Bounds.X) &&
+					(y >= 0 || y < Bounds.Y) &&
+					(z >= 0 || z < Bounds.Z))
+				{
+					
+				}
+			}
+		}
+	}
+	*/
+	for (AChunk* chunk : Chunks)
+	{
+		FVector min = chunk->Origin * (NumOfPoints - 1) * CubeSize;
+		FVector max = (chunk->Origin + FVector::OneVector) * (NumOfPoints - 1) * CubeSize;
+		FBox chunkBox(min, max);
+		if(FMath::SphereAABBIntersection(hitPoint, AdditionRadius * AdditionRadius, chunkBox))
+		{
+			chunk->AddPoint(hitPoint, isAddition);
+		}
+	}
 }
 
 void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//_Noise->SetupFastNoise(EFastNoise_NoiseType::PerlinFractal, 1337, 0.02);
 
 	TArray<AActor*> caves;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACaveActor::StaticClass(), caves);
@@ -138,13 +156,9 @@ void AMeshGenerator::BeginPlay()
 				FVector origin(x, y, z);
 				FVector location = origin * (NumOfPoints - 1) * CubeSize;
 				AChunk* chunk = GetWorld()->SpawnActor<AChunk>(AChunk::StaticClass(), location, FRotator::ZeroRotator);
-				chunk->Create(origin, NumOfPoints, NoiseScale, IsoLevel, CubeSize);
+				chunk->Create(origin, ChunkSettings);
+				Chunks.Add(chunk);
 			}
 		}
 	}
-}
-
-void AMeshGenerator::CreateChunk(FVector chunkOrigin)
-{
-
 }

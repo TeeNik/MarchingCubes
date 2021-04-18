@@ -2,10 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-//#include "FastNoiseWrapper.h"
+#include "Generation/ChunkSettings.h"
 #include "MeshGenerator.generated.h"
 
 class UProceduralMeshComponent;
+class AChunk;
 
 UCLASS()
 class MARCHINGCUBES_API AMeshGenerator : public AActor
@@ -15,7 +16,7 @@ class MARCHINGCUBES_API AMeshGenerator : public AActor
 public:	
 	AMeshGenerator();
 
-	void AddPoint(FVector hitPoint, bool isAddition);
+	void AddPoint(AChunk* chunk, FVector hitPoint, bool isAddition);
 
 protected:
 	virtual void BeginPlay() override;
@@ -29,6 +30,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	bool DrawDebugPoints = false;
+
+	UPROPERTY(EditAnywhere)
+	FChunkSettings ChunkSettings;
 
 	UPROPERTY(EditAnywhere)
 	float AdditionRadius = 100.0f;
@@ -55,6 +59,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float IsoLevel = 0.5f;
 
-private:
-	void CreateChunk(FVector chunkOrigin);
+	UPROPERTY(Transient)
+	TArray<AChunk*> Chunks;
+
 };
