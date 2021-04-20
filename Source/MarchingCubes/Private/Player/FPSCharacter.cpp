@@ -10,6 +10,7 @@
 #include "DrawDebugHelpers.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Generation/Chunk.h"
 
 AFPSCharacter::AFPSCharacter()
 {
@@ -48,12 +49,16 @@ void AFPSCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	FP_Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
-	
+
+	AActor* meshGenerator = UGameplayStatics::GetActorOfClass(GetWorld(), AMeshGenerator::StaticClass());
+	if(meshGenerator)
+	{
+		MeshGenerator = Cast<AMeshGenerator>(meshGenerator);
+	}
 }
 
 void AFPSCharacter::Tick(float DeltaTime)
 {
-	
 	if(IsValid(LaserParticle))
 	{
 		FVector start = FP_MuzzleLocation->GetComponentLocation();
@@ -71,11 +76,28 @@ void AFPSCharacter::Tick(float DeltaTime)
 		bool result = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECollisionChannel::ECC_Visibility);
 		if (result)
 		{
-			AMeshGenerator* generator = Cast<AMeshGenerator>(hit.Actor);
-			if (generator)
-			{
-				generator->AddPoint(hit.ImpactPoint, false);
-			}
+			TArray<FHitResult> hitResults;
+			FVector location = hit.ImpactPoint;
+
+			AChunk* chunk = Cast<AChunk>(hit.Actor);
+			MeshGenerator->AddPoint(chunk, location, false);
+
+			//ECollisionChannel ECC = ECollisionChannel::ECC_WorldStatic;
+			//FCollisionShape CollisionShape;
+			//CollisionShape.ShapeType = ECollisionShape::Sphere;
+			//CollisionShape.SetSphere(AdditionRadius);
+			//GetWorld()->SweepMultiByChannel(hitResults, location, location, FQuat::FQuat(), ECC, CollisionShape);
+			//
+			//UE_LOG(LogTemp, Log, TEXT("hits: %d"), hitResults.Num());
+			//
+			//for (const FHitResult& hitResult : hitResults)
+			//{
+			//	AChunk* chunk = Cast<AChunk>(hitResult.Actor);
+			//	if (chunk)
+			//	{
+			//		chunk->AddPoint(location, false);
+			//	}
+			//}
 		}
 	}
 }
@@ -100,8 +122,6 @@ void AFPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 
 void AFPSCharacter::OnRMBPressed()
 {
-	//LaserParticle = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserTemplate, FVector(0, 0, 0));
-
 	if(!IsValid(LaserParticle))
 	{
 		LaserParticle = UNiagaraFunctionLibrary::SpawnSystemAttached(LaserTemplate, FP_MuzzleLocation, TEXT("None"),

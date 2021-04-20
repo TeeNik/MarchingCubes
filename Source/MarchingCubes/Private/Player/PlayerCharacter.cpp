@@ -29,7 +29,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 			AMeshGenerator* generator = Cast<AMeshGenerator>(hit.Actor);
 			if (generator)
 			{
-				generator->AddPoint(hit.ImpactPoint, IsLMBPressed);
+				//generator->AddPoint(hit.ImpactPoint, IsLMBPressed);
 			}
 		}
 	}

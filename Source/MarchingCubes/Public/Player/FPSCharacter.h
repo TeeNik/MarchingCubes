@@ -15,6 +15,7 @@ class UParticleSystem;
 class UParticleSystemComponent;
 class UNiagaraComponent;
 class UNiagaraSystem;
+class AMeshGenerator;
 
 UCLASS()
 class AFPSCharacter : public ACharacter
@@ -58,6 +59,9 @@ protected:
 	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite)
 	UNiagaraComponent* LaserParticle;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AdditionRadius = 1.0f;
+
 private:
 
 	void OnFire();
@@ -69,5 +73,8 @@ private:
 
 	bool IsRMBPressed = false;
 	float NextFireTime = 0.0f;
+
+	UPROPERTY(Transient)
+	AMeshGenerator* MeshGenerator;
 };
 
