@@ -33,11 +33,11 @@ void AChunk::Create(const FVector& origin, const FChunkSettings& chunkSettings)
 				noise = (noise + 1) / 2;
 				point.W = noise + height / 2;
 
-				//if (x == 0 || y == 0 || x >= Bounds.X - 2 || y >= Bounds.Y - 2 || z >= Bounds.Z - 2)
+				//if (x == 0 || y == 0 || x >= point.X - 2 || y >= point.Y - 2 || z >= point.Z - 2)
 				//{
 				//	point.W = FMath::RandRange(0.15f, 0.25f);
 				//}
-				//
+				
 				if (origin.Z == 0 && point.Z < ChunkSettings.FloorLevel && point.W > ChunkSettings.IsoLevel)
 				{
 					point.W = FMath::RandRange(0.15f, 0.25f);
@@ -159,30 +159,9 @@ void AChunk::GenerateMesh()
 	{
 		normals[i].Normalize();
 	}
+
 	Mesh->CreateMeshSection_LinearColor(0, vertices, indices, normals, TArray<FVector2D>(), TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
-}
-
-void AChunk::AddPoint(FVector hitPoint, bool isAddition)
-{
-	for (FVector4& point : Points)
-	{
-		FVector localPoint = GetActorTransform().InverseTransformPosition(hitPoint);
-		float dist = FVector::Dist(point * ChunkSettings.CubeSize, localPoint);
-		if(dist < ChunkSettings.AdditionRadius)
-		{
-			float value = point.W;
-			value += (isAddition ? -ChunkSettings.AdditionValue : ChunkSettings.AdditionValue) * (1-dist / ChunkSettings.AdditionRadius);
-			point.W = value;
-
-			{
-				float colorValue = point.W * 255;
-				FColor color = FColor(colorValue, 0, 1 - colorValue);
-				//DrawDebugSphere(GetWorld(), GetActorTransform().TransformPosition(point * ChunkSettings.CubeSize), 10, 4, color, false, 25);
-			}
-			
-		}
-	}
-	GenerateMesh();
+	Mesh->SetMaterial(0, ChunkSettings.Material);
 }
 
 FVector AChunk::InterpolateVertex(FVector4 a, FVector4 b, float isoLevel)

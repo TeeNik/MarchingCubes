@@ -2,6 +2,7 @@
 
 #include "ChunkSettings.generated.h"
 
+class UMaterialInterface;
 
 USTRUCT(BlueprintType)
 struct MARCHINGCUBES_API FChunkSettings
@@ -22,4 +23,8 @@ struct MARCHINGCUBES_API FChunkSettings
 	float AdditionValue = 0.1f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float AdditionRadius = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 WallsWidth = 3;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UMaterialInterface* Material;
 };
