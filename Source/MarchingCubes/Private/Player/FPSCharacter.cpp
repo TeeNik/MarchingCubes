@@ -81,23 +81,6 @@ void AFPSCharacter::Tick(float DeltaTime)
 
 			AChunk* chunk = Cast<AChunk>(hit.Actor);
 			MeshGenerator->AddPoint(chunk, location, false);
-
-			//ECollisionChannel ECC = ECollisionChannel::ECC_WorldStatic;
-			//FCollisionShape CollisionShape;
-			//CollisionShape.ShapeType = ECollisionShape::Sphere;
-			//CollisionShape.SetSphere(AdditionRadius);
-			//GetWorld()->SweepMultiByChannel(hitResults, location, location, FQuat::FQuat(), ECC, CollisionShape);
-			//
-			//UE_LOG(LogTemp, Log, TEXT("hits: %d"), hitResults.Num());
-			//
-			//for (const FHitResult& hitResult : hitResults)
-			//{
-			//	AChunk* chunk = Cast<AChunk>(hitResult.Actor);
-			//	if (chunk)
-			//	{
-			//		chunk->AddPoint(location, false);
-			//	}
-			//}
 		}
 	}
 }
@@ -122,19 +105,22 @@ void AFPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 
 void AFPSCharacter::OnRMBPressed()
 {
-	if(!IsValid(LaserParticle))
+	if(!IsValid(LaserParticle) && !IsDestroyingLaser)
 	{
 		LaserParticle = UNiagaraFunctionLibrary::SpawnSystemAttached(LaserTemplate, FP_MuzzleLocation, TEXT("None"),
 			FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-	}
 
-	IsRMBPressed = true;
+		IsRMBPressed = true;
+	}
 }
 
 void AFPSCharacter::OnRMBReleased()
 {
-	IsRMBPressed = false;
-	DestroyLaser();
+	if(LaserParticle && IsRMBPressed)
+	{
+		IsRMBPressed = false;
+		DestroyLaser();
+	}
 }
 
 void AFPSCharacter::OnFire()

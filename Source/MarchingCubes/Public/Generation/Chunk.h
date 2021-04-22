@@ -16,8 +16,6 @@ public:
 	AChunk();
 
 	void Create(const FVector& origin, const FChunkSettings& chunkSettings);
-	void AddPoint(FVector hitPoint, bool isAddition);
-
 	FVector Origin;
 
 protected:

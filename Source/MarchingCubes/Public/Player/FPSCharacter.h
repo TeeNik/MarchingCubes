@@ -54,13 +54,14 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	float FireTimeout = 0.2f;
-	UFUNCTION(BlueprintImplementableEvent)
-	void DestroyLaser();
+
 	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite)
 	UNiagaraComponent* LaserParticle;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void DestroyLaser();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float AdditionRadius = 1.0f;
+	bool IsDestroyingLaser = false;
 
 private:
 
