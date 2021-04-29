@@ -19,28 +19,44 @@ void AChunk::Create(const FVector& origin, const FChunkSettings& chunkSettings)
 	ChunkSettings = chunkSettings;
 	Origin = origin;
 
-	for (int x = 0; x < ChunkSettings.NumOfPoints; ++x)
+	FVector bounds = ChunkSettings.Bounds;
+	int numOfPoints = ChunkSettings.NumOfPoints;
+
+	for (int x = 0; x < numOfPoints; ++x)
 	{
-		for (int y = 0; y < ChunkSettings.NumOfPoints; ++y)
+		for (int y = 0; y < numOfPoints; ++y)
 		{
-			for (int z = 0; z < ChunkSettings.NumOfPoints; ++z)
+			for (int z = 0; z < numOfPoints; ++z)
 			{
 				FVector4 point(x, y, z, 0);
-				FVector realPoint = point + origin * (ChunkSettings.NumOfPoints - 1);
+				FVector realPoint = point + origin * (numOfPoints - 1);
 				//float height = UKismetMathLibrary::NormalizeToRange(point.Z, 0.0f, Bounds.Z);
 				float height = 0.0f;
 				float noise = FMath::PerlinNoise3D(realPoint * ChunkSettings.NoiseScale);
 				noise = (noise + 1) / 2;
 				point.W = noise + height / 2;
 
-				//if (x == 0 || y == 0 || x >= point.X - 2 || y >= point.Y - 2 || z >= point.Z - 2)
+				//if ((Origin.X == 0 || Origin.Y == 0 || Origin.X >= bounds.X - 2 || Origin.Y >= bounds.Y - 2) &&
+				//	(x == 0 || y == 0 || x >= bounds.X - 2 || y >= bounds.Y - 2))
+				FVector lastPoint((bounds - FVector::OneVector) * (numOfPoints - 1));
+				//if(realPoint.X < ChunkSettings.WallsWidth || realPoint.Y < ChunkSettings.WallsWidth)
 				//{
-				//	point.W = FMath::RandRange(0.15f, 0.25f);
+				//	point.W = FMath::Abs(point.W - ChunkSettings.IsoLevel);
+				//	//point.W = FMath::RandRange(0.15f, 0.25f);
 				//}
-				
-				if (origin.Z == 0 && point.Z < ChunkSettings.FloorLevel && point.W > ChunkSettings.IsoLevel)
+
+				if( (Origin.X == 0 && x < ChunkSettings.WallsWidth) ||
+					(Origin.Y == 0 && y < ChunkSettings.WallsWidth) ||
+					(Origin.X == bounds.X - 1 && x > numOfPoints - ChunkSettings.WallsWidth) || 
+					(Origin.Y == bounds.Y - 1 && y > numOfPoints - ChunkSettings.WallsWidth))
 				{
-					point.W = FMath::RandRange(0.15f, 0.25f);
+					point.W = FMath::Abs(point.W - ChunkSettings.IsoLevel);
+				}
+				
+				if ((origin.Z == 0 && point.Z < ChunkSettings.FloorLevel) ||
+					(origin.Z == bounds.Z - 1 && point.Z > (numOfPoints - ChunkSettings.FloorLevel)))
+				{
+					point.W = FMath::Abs(point.W - ChunkSettings.IsoLevel);
 				}
 				Points.Emplace(point);
 			}
@@ -162,6 +178,22 @@ void AChunk::GenerateMesh()
 
 	Mesh->CreateMeshSection_LinearColor(0, vertices, indices, normals, TArray<FVector2D>(), TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
 	Mesh->SetMaterial(0, ChunkSettings.Material);
+}
+
+void AChunk::AddPoint(FVector hitPoint, bool isAddition)
+{
+	for (FVector4& point : Points)
+	{
+		FVector localPoint = GetActorTransform().InverseTransformPosition(hitPoint);
+		float dist = FVector::Dist(point * ChunkSettings.CubeSize, localPoint);
+		if (dist < ChunkSettings.AdditionRadius)
+		{
+			float value = point.W;
+			value += (isAddition ? -ChunkSettings.AdditionValue : ChunkSettings.AdditionValue) * (1 - dist / ChunkSettings.AdditionRadius);
+			point.W = value;
+		}
+	}
+	GenerateMesh();
 }
 
 FVector AChunk::InterpolateVertex(FVector4 a, FVector4 b, float isoLevel)

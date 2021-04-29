@@ -22,17 +22,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere)
-	FVector Bounds;
-	UPROPERTY(EditAnywhere)
 	FChunkSettings ChunkSettings;
 
 	UPROPERTY(EditAnywhere)
 	bool DrawDebugPoints = false;
-
-	UPROPERTY(EditAnywhere)
-	float AdditionRadius = 100.0f;
-	UPROPERTY(EditAnywhere)
-	float AdditionValue = 0.05f;
 
 	float MaxNoiseValue = 1.0f;
 	UPROPERTY(EditAnywhere)
