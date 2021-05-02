@@ -7,10 +7,10 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Generation/MeshGenerator.h"
-#include "DrawDebugHelpers.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Generation/Chunk.h"
+#include "Player/Laser.h"
 
 AFPSCharacter::AFPSCharacter()
 {
@@ -59,29 +59,30 @@ void AFPSCharacter::BeginPlay()
 
 void AFPSCharacter::Tick(float DeltaTime)
 {
-	if(IsValid(LaserParticle))
-	{
-		FVector start = FP_MuzzleLocation->GetComponentLocation();
-		FVector target = start + FirstPersonCameraComponent->GetForwardVector() * 1000;
-		LaserParticle->SetVectorParameter(TEXT("User.BeamEnd"), target);
-	}
+	FVector start = FP_MuzzleLocation->GetComponentLocation();
+	FVector target = start + FirstPersonCameraComponent->GetForwardVector() * 1000;
 
 	if(IsRMBPressed && GetWorld()->GetTimeSeconds() > NextFireTime)
 	{
 		NextFireTime = GetWorld()->GetTimeSeconds() + FireTimeout;
 		FHitResult hit;
-		FVector start = FirstPersonCameraComponent->GetComponentLocation();
-		FVector end = start + FirstPersonCameraComponent->GetForwardVector() * 10000;
-		//DrawDebugLine(GetWorld(), start, end, FColor::Green, false, 5, 0, 2);
-		bool result = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECollisionChannel::ECC_Visibility);
+		FVector rayStart = FirstPersonCameraComponent->GetComponentLocation();
+		FVector rayEnd = start + FirstPersonCameraComponent->GetForwardVector() * 10000;
+		bool result = GetWorld()->LineTraceSingleByChannel(hit, rayStart, rayEnd, ECollisionChannel::ECC_Visibility);
 		if (result)
 		{
 			TArray<FHitResult> hitResults;
 			FVector location = hit.ImpactPoint;
+			target = location;
 
 			AChunk* chunk = Cast<AChunk>(hit.Actor);
 			MeshGenerator->AddPoint(chunk, location, false);
 		}
+	}
+
+	if (IsValid(Laser))
+	{
+		Laser->UpdateLaser(start, target);
 	}
 }
 
@@ -105,21 +106,21 @@ void AFPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 
 void AFPSCharacter::OnRMBPressed()
 {
-	if(!IsValid(LaserParticle) && !IsDestroyingLaser)
+	if(LaserBP && !IsDestroyingLaser)
 	{
-		LaserParticle = UNiagaraFunctionLibrary::SpawnSystemAttached(LaserTemplate, FP_MuzzleLocation, TEXT("None"),
-			FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-
+		Laser = Cast<ALaser>(GetWorld()->SpawnActor(LaserBP));
+		Laser->AttachToComponent(FP_MuzzleLocation, FAttachmentTransformRules::KeepRelativeTransform);
+		Laser->SetActorLocation(FP_MuzzleLocation->GetComponentLocation());
 		IsRMBPressed = true;
 	}
 }
 
 void AFPSCharacter::OnRMBReleased()
 {
-	if(LaserParticle && IsRMBPressed)
+	if(IsValid(Laser) && IsRMBPressed)
 	{
 		IsRMBPressed = false;
-		DestroyLaser();
+		Laser->DestroyLaser();
 	}
 }
 

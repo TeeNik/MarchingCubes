@@ -36,15 +36,6 @@ void AChunk::Create(const FVector& origin, const FChunkSettings& chunkSettings)
 				noise = (noise + 1) / 2;
 				point.W = noise + height / 2;
 
-				//if ((Origin.X == 0 || Origin.Y == 0 || Origin.X >= bounds.X - 2 || Origin.Y >= bounds.Y - 2) &&
-				//	(x == 0 || y == 0 || x >= bounds.X - 2 || y >= bounds.Y - 2))
-				FVector lastPoint((bounds - FVector::OneVector) * (numOfPoints - 1));
-				//if(realPoint.X < ChunkSettings.WallsWidth || realPoint.Y < ChunkSettings.WallsWidth)
-				//{
-				//	point.W = FMath::Abs(point.W - ChunkSettings.IsoLevel);
-				//	//point.W = FMath::RandRange(0.15f, 0.25f);
-				//}
-
 				if( (Origin.X == 0 && x < ChunkSettings.WallsWidth) ||
 					(Origin.Y == 0 && y < ChunkSettings.WallsWidth) ||
 					(Origin.X == bounds.X - 1 && x > numOfPoints - ChunkSettings.WallsWidth) || 

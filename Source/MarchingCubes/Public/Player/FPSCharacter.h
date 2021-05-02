@@ -13,9 +13,8 @@ class UAnimMontage;
 class USoundBase;
 class UParticleSystem;
 class UParticleSystemComponent;
-class UNiagaraComponent;
-class UNiagaraSystem;
 class AMeshGenerator;
+class ALaser;
 
 UCLASS()
 class AFPSCharacter : public ACharacter
@@ -49,19 +48,20 @@ protected:
 	USkeletalMeshComponent* FP_Gun;
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	USceneComponent* FP_MuzzleLocation;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UNiagaraSystem* LaserTemplate;
+
+	UPROPERTY(EditDefaultsOnly, Category = Mesh)
+	TSubclassOf<ALaser> LaserBP;
 
 	UPROPERTY(EditAnywhere)
 	float FireTimeout = 0.2f;
-
-	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite)
-	UNiagaraComponent* LaserParticle;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void DestroyLaser();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool IsDestroyingLaser = false;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
+	ALaser* Laser;
 
 private:
 
