@@ -59,30 +59,28 @@ void AFPSCharacter::BeginPlay()
 
 void AFPSCharacter::Tick(float DeltaTime)
 {
-	FVector start = FP_MuzzleLocation->GetComponentLocation();
-	FVector target = start + FirstPersonCameraComponent->GetForwardVector() * 1000;
+	if(IsValid(Laser))
+	{
+		FVector start = FP_MuzzleLocation->GetComponentLocation();
+		FVector target = start + FirstPersonCameraComponent->GetForwardVector() * 1000;
+		Laser->UpdateLaser(start, target);
+	}
 
 	if(IsRMBPressed && GetWorld()->GetTimeSeconds() > NextFireTime)
 	{
 		NextFireTime = GetWorld()->GetTimeSeconds() + FireTimeout;
 		FHitResult hit;
-		FVector rayStart = FirstPersonCameraComponent->GetComponentLocation();
-		FVector rayEnd = start + FirstPersonCameraComponent->GetForwardVector() * 10000;
-		bool result = GetWorld()->LineTraceSingleByChannel(hit, rayStart, rayEnd, ECollisionChannel::ECC_Visibility);
+		FVector start = FirstPersonCameraComponent->GetComponentLocation();
+		FVector end = start + FirstPersonCameraComponent->GetForwardVector() * 10000;
+		bool result = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECollisionChannel::ECC_Visibility);
 		if (result)
 		{
 			TArray<FHitResult> hitResults;
 			FVector location = hit.ImpactPoint;
-			target = location;
 
 			AChunk* chunk = Cast<AChunk>(hit.Actor);
 			MeshGenerator->AddPoint(chunk, location, false);
 		}
-	}
-
-	if (IsValid(Laser))
-	{
-		Laser->UpdateLaser(start, target);
 	}
 }
 
@@ -106,7 +104,7 @@ void AFPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 
 void AFPSCharacter::OnRMBPressed()
 {
-	if(LaserBP && !IsDestroyingLaser)
+	if(LaserBP)
 	{
 		Laser = Cast<ALaser>(GetWorld()->SpawnActor(LaserBP));
 		Laser->AttachToComponent(FP_MuzzleLocation, FAttachmentTransformRules::KeepRelativeTransform);

@@ -51,20 +51,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = Mesh)
 	TSubclassOf<ALaser> LaserBP;
-
 	UPROPERTY(EditAnywhere)
 	float FireTimeout = 0.2f;
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void DestroyLaser();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool IsDestroyingLaser = false;
-
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
 	ALaser* Laser;
 
 private:
-
 	void OnFire();
 	void OnRMBPressed();
 	void OnRMBReleased();
